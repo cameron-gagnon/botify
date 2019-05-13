@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3.5
 
 from pprint import pprint
 import sys
@@ -24,18 +24,24 @@ class SpotifyPlayer:
         self.sp.trace = False
 
     def request_song(self, song):
-        song_uri = None
+        ''' Supports URL and search term queries NOT URI queries'''
+        song_uri = song_title = artist = None
+
         if self._is_url(song):
             song_uri = self._uri_from_url(song)
-        elif not self._is_uri(song):
-            print("IS NOT A URI", song)
-            res = self.sp.search(song, limit=1, market='US')
-            song_uri = res['tracks']['items'][0]['uri']
 
-        if not song_uri:
-            return "Could not find song", song
+        res = self.sp.search(song, limit=1, market='US')
+        if res['tracks']['total'] == 0:
+            return "Error: {} could not be added".format(song)
+
+        song_uri = res['tracks']['items'][0]['uri']
+        artist = res['tracks']['items'][0]['artists'][0]['name']
+        song_title = res['tracks']['items'][0]['name']
+
 
         self._add_song_to_playlist(song_uri)
+        return "{song_title} by {artist} was added to the playlist".format(
+                song_title=song_title, artist=artist)
 
     def _is_uri(self, song):
         return ':' in song
@@ -91,7 +97,7 @@ class SpotifyPlayer:
     def _load_config(self):
       with open(self.CONFIG_FILENAME) as stream:
           try:
-              self.config = yaml.safe_load(stream)
+              self.config = yaml.safe_load(stream)['botify']
           except yaml.YAMLError as e:
               print(e)
 
