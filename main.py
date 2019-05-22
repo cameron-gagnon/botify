@@ -1,27 +1,11 @@
 #!/usr/bin/env python3.5
 
-from app.botify import SpotifyPlayer
 from flask import Flask, request
+from app.views.queue import queue
+from app.views.error_handlers import error_handlers
 
 app = Flask(__name__)
+app.register_blueprint(queue)
+app.register_blueprint(error_handlers)
 
-spot = SpotifyPlayer()
-
-@app.route('/request_song', methods=['POST'])
-def request_song():
-    query = request.form.get('query')
-    if not query:
-        print("No query!")
-        return 'No query'
-
-    response = spot.request_song(query)
-    return response
-
-@app.route('/volume', methods=['POST'])
-def volume():
-    volume = request.form.get('volume')
-    if not volume:
-        return spot.get_volume()
-    return spot.volume(volume)
-
-app.run(debug=False, host='127.0.0.1', port=4242)
+app.run(debug=True, host='127.0.0.1', port=4242)
