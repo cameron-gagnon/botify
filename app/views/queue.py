@@ -37,8 +37,14 @@ def next_song():
     return song_queue.next_song(user)
 
 @queue.route('/playlist', methods=['GET'])
-def playlist():
-    return song_queue.playlist()
+@queue.route('/playlist/<offset>', methods=['GET'])
+def playlist(offset=1):
+    return song_queue.playlist(offset)
+
+@queue.route('/promote', methods=['GET'])
+@queue.route('/promote/<offset>', methods=['GET'])
+def promote(offset=0):
+    return song_queue.promote(offset)
 
 @queue.route('/pause', methods=['GET'])
 def pause_song():

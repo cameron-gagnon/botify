@@ -6,34 +6,21 @@ import yaml
 
 import spotipy
 import spotipy.util as util
+import re
 
-def handle_refresh(fn):
-    def wrapper(*args, **kwargs):
-        try:
-            return fn(*args, **kwargs)
-        except spotipy.client.SpotifyException:
-            print("Refreshing auth token")
-            args[0]._refresh()
-            return fn(*args, **kwargs)
-    return wrapper
-
-def handle_500(fn):
-    def wrapper(*args, **kwargs):
-        try:
-            return True, fn(*args, **kwargs)
-        except spotipy.client.SpotifyException:
-            return False, None
-    return wrapper
+from ..decorators.decorators import handle_500, handle_refresh
 
 
 class SpotifyPlayer:
     CONFIG_FILENAME = 'config.yml'
     RANGER_DEVICE_ID = '97b75274a2b8596ba6eaedf3d7caa971921fcd9a'
+    VOL_REGEX = '[\+|-]\d{1,3}'
 
     def __init__(self):
         self.queue = []
         self._load_config()
         self._refresh()
+        self.volume_percent = 0
 
     @handle_refresh
     def search(self, song):
@@ -87,22 +74,26 @@ class SpotifyPlayer:
 
     @handle_refresh
     def volume(self, volume_percent):
+        matched = re.match(self.VOL_REGEX, volume_percent)
+        if matched:
+            volume_percent = self.volume_percent + int(matched.group(0))
+
         try:
-            volume_percent = int(volume_percent)
+            volume_percent = self._clamp(int(volume_percent), 0, 100)
         except ValueError:
-            return "Please enter a valid number between 1 and 50"
+            return "Please enter a valid number between 1 and 50, inclusive"
 
         if volume_percent > 50 and volume_percent != 69:
-            return "Please don't make me go deaf while I play games :("
+            return "Please don't make me go deaf while I play games :( Give a value between 0 and 50, inclusive"
 
         self.sp.volume(volume_percent, device_id=self.RANGER_DEVICE_ID)
+        self.volume_percent = volume_percent
 
         return "Volume set to {}".format(volume_percent)
 
     @handle_refresh
     def current_playback(self):
         return self._currently_playing(self.sp.current_playback(market='US'))
-
 
     @handle_500
     def request_playback_info(self):
@@ -132,6 +123,9 @@ class SpotifyPlayer:
         ''' Should always be run in a thread '''
         pass
         #while currently_playing !=
+
+    def _clamp(self, n, minn, maxn):
+        return max(min(maxn, n), minn)
 
     def _refresh(self):
         self.token = util.prompt_for_user_token(self.config['username'],

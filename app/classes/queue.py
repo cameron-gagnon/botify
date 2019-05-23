@@ -3,6 +3,7 @@
 from .spotify import SpotifyPlayer
 from .song_request import SongRequest
 from .song_types import SongType
+from ..decorators.decorators import handle_infinite_loop
 
 import threading
 import time
@@ -47,14 +48,24 @@ class Queue:
                 return 'Removed: {}'.format(removed.song.title)
         return self.NO_SONGS_IN_QUEUE
 
-    def playlist(self):
-        if len(self.queue) == 0:
-            return self.NO_SONGS_IN_QUEUE
+    def promote(self, pos):
+        success, pos = self._validate_int(pos)
+        if not success:
+            return pos
+
+        self.queue[1], self.queue[pos-1] = self.queue[pos-1], self.queue[1]
+        return 'Promoted {} requested by {} to #2'.format(self.queue[1].song.title,
+                self.queue[1].requester)
+
+    def playlist(self, offset=0):
+        success, offset = self._validate_int(offset)
+        if not success:
+            return offset
 
         num_to_show = 3
         playlist_msg = 'The next songs are: '
-        for i, song in enumerate(self.queue[:num_to_show]):
-            playlist_msg += '#{}: {} requested by {} '.format(i+1,
+        for i, song in enumerate(self.queue[offset-1:offset-1+num_to_show]):
+            playlist_msg += '#{}: {} requested by {} '.format(i+offset,
                     song.song.title, song.requester)
 
         return playlist_msg
@@ -64,23 +75,6 @@ class Queue:
             return 'Not enough votes to skip: {}. Need 3 total. Vote with !nextsong'.format(len(self.skippers))
 
         return self._next_song()
-
-    def _next_song(self):
-        self._clear_playback_info()
-        if len(self.queue) == 0:
-            print('next_song with no next songs')
-            return 'No next songs'
-
-        response = None
-        if len(self.queue) == 1:
-            self.queue = []
-            self.stop_playing()
-            return self.NO_SONGS_IN_QUEUE
-
-        self.start_playing(self.queue[1])
-        self.queue = self.queue[1:]
-        self.skippers = set()
-        return self.current_song()
 
     def current_song(self):
         if len(self.queue) == 0:
@@ -127,6 +121,35 @@ class Queue:
             pass
         return 'Playing the thicc beatz'
 
+    def _next_song(self):
+        self._clear_playback_info()
+        if len(self.queue) == 0:
+            print('next_song with no next songs')
+            return 'No next songs'
+
+        response = None
+        if len(self.queue) == 1:
+            self.queue = []
+            self.stop_playing()
+            return self.NO_SONGS_IN_QUEUE
+
+        self.start_playing(self.queue[1])
+        self.queue = self.queue[1:]
+        self.skippers = set()
+        return self.current_song()
+
+    def _validate_int(self, num):
+        if len(self.queue) == 0:
+            return False, self.NO_SONGS_IN_QUEUE
+        try:
+            num = int(num)
+        except ValueError:
+            return False, "Give a valid integer"
+
+        if num < 1 or num > len(self.queue):
+            return False, "Please give a number between 1 and {}".format(len(self.queue))
+        return True, num
+
     def _clear_playback_info(self):
         self.playback_info = None
 
@@ -139,6 +162,7 @@ class Queue:
             return True
         return False
 
+    @handle_infinite_loop
     def _check_current_song_to_play_next(self):
         while True:
             time.sleep(5)
