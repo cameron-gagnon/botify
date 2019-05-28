@@ -30,3 +30,10 @@ def handle_500(fn):
     return wrapper
 
 
+def check_queue_length(fn):
+    def wrapper(*args, **kwargs):
+        if len(args[0].queue) == 0:
+            return args[0].NO_SONGS_IN_QUEUE
+
+        return fn(*args, **kwargs)
+    return wrapper

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3.5
 
 from .spotify import SpotifyPlayer
-from .song_request import SongRequest
+from .youtube_api import YouTubeAPI
+from .song_request import SongRequestFactory
 from .song_types import SongType
 from ..decorators.decorators import handle_infinite_loop
 
@@ -12,28 +13,43 @@ class Queue:
     NO_SONG = 'No current song'
     NO_SONGS_IN_QUEUE = 'No songs in the queue. Add one with !sr'
     BOTIFY_ERROR = 'Spotify couldn\'t'
+    MAX_LEN = 20
 
     def __init__(self):
         self.botify = SpotifyPlayer()
+        self.yt = YouTubeAPI()
         self.queue = []
         self.skippers = set()
         self.playback_info = {}
         threading.Thread(target=self._check_current_song_to_play_next).start()
 
     def request_song(self, song, requester):
+        if len(self.queue) >= self.MAX_LEN:
+            return "Sorry, the queue is full right now :( Please add a song after the next one has played!"
+
+        song_type = None
         if self._is_youtube_link(song):
-            return "YouTube is currently not supported"
-            #self.yt.search(song)
+            success, response = self.yt.search(song)
+            if not success:
+                return response['error']
+            song_type = SongType.YouTube
 
-        success, response = self.botify.search(song)
-        if not success:
-            return response['error']
+        if not song_type:
+            success, response = self.botify.search(song)
+            if success:
+                song_type = SongType.Spotify
 
-        # just add it to streamiest playlist for now
-        self.botify.request_song(song)
+        if not song_type:
+            success, response = self.yt.search(song)
+            if success:
+                song_type = SongType.YouTube
 
-        songRequest = SongRequest(SongType.Spotify, response['title'],
-                response['song_uri'], requester)
+        if not song_type:
+            return 'Could not find {} :('.format(song)
+
+        songRequest = SongRequestFactory(song_type, response['title'],
+                        response['song_uri'], requester)
+
         response = self._add_to_queue(songRequest)
         self._check_and_start_playing()
         return response
@@ -48,7 +64,10 @@ class Queue:
                 return 'Removed: {}'.format(removed.song.title)
         return self.NO_SONGS_IN_QUEUE
 
-    def promote(self, pos):
+    def promote(self, requester, pos):
+        if requester not in ['stroopc', 'joker6878']:
+            return "Sorry, only the DJs can promote songs :/"
+
         success, pos = self._validate_int(pos)
         if not success:
             return pos
@@ -76,26 +95,22 @@ class Queue:
 
         return self._next_song()
 
+    @check_queue_length
     def current_song(self):
-        if len(self.queue) == 0:
-            return self.NO_SONG
-        return 'Currently playing: {} requested by {}'.format(
-                    self.queue[0].song.title, self.queue[0].requester)
+        return 'Currently Playing: ' + self.queue[0].info()
 
+    @check_queue_length
     def volume(self, volume):
-        return self.botify.volume(volume)
+        return self.queue[0].volume(volume)
 
+    @check_queue_length
     def get_volume(self):
         return self.botify.get_volume()
 
+    @check_queue_length
     def stop_playing(self):
-        if len(self.queue) == 0:
-            return self.NO_SONGS_IN_QUEUE
+        self.queue[0].pause()
 
-        if self.queue[0].song.type == SongType.Spotify:
-            self.botify.pause_track()
-        elif self.queue[0].song.type == SongType.Youtube:
-            pass
         return 'Stopped the music :('
 
     def start_playing(self, sr=None):
@@ -104,21 +119,9 @@ class Queue:
 
         if not sr:
             sr = self.queue[0]
-# TODO: fix !play playing song while it's already playing
-#        success, info = self._request_playback_info()
-#        if not success:
-#            return self.BOTIFY_ERROR
-#
-#        if info and info['is_playing']:
-#            return 'Already playing chunes'
 
-        if sr.song.type == SongType.Spotify:
-            ms = 0
-            if self.playback_info and self.playback_info['progress_ms']:
-                ms = self.playback_info['progress_ms']
-            self.botify.play_track(sr, position_ms=ms)
-        elif sr.song.type == SongType.Youtube:
-            pass
+        sr.play()
+
         return 'Playing the thicc beatz'
 
     def _next_song(self):
@@ -187,7 +190,7 @@ class Queue:
 
         if self.queue[0].song.type == SongType.Spotify:
             return self.botify.request_playback_info()
-        elif self.queue[0].song.type == SongType.Youtube:
+        elif self.queue[0].song.type == SongType.YouTube:
             pass
 
     def _check_and_start_playing(self):
@@ -201,9 +204,5 @@ class Queue:
         return "Added {} to the queue in position number #{}".format(
                 songRequest.song.title, len(self.queue))
 
-    def _remove_from_queue(self, requester):
-        pass
-
     def _is_youtube_link(self, link):
         return 'youtube' in link or 'youtu.be' in link
-
