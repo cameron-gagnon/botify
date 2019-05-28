@@ -25,7 +25,7 @@ def volume():
     volume = request.form.get('volume')
     if not volume:
         return song_queue.get_volume()
-    return song_queue.volume(volume)
+    return song_queue.set_volume(volume)
 
 @queue.route('/current_song', methods=['GET'])
 def current_song():

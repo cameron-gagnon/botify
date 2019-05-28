@@ -3,6 +3,8 @@ import os
 import yaml
 import isodate
 
+from app.helpers.config import Config
+
 from pprint import pprint
 
 import googleapiclient.discovery
@@ -10,11 +12,10 @@ import googleapiclient.errors
 
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 
-class YouTubeAPI:
-    CONFIG_FILENAME = 'config.yml'
+class YouTubeAPI(Config):
 
     def __init__(self):
-        self._load_config()
+        super().__init__('youtube')
 
         # Disable OAuthlib's HTTPS verification when running locally.
         # *DO NOT* leave this option enabled in production.
@@ -76,13 +77,6 @@ class YouTubeAPI:
 
     def _duration_valid(self, duration):
         return isodate.parse_duration(duration).total_seconds() < 600
-
-    def _load_config(self):
-      with open(self.CONFIG_FILENAME) as stream:
-          try:
-              self.config = yaml.safe_load(stream)['youtube']
-          except yaml.YAMLError as e:
-              print(e)
 
 if __name__ == "__main__":
     yt_api = YouTubeAPI()
