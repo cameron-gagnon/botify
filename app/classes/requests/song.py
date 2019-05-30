@@ -1,5 +1,3 @@
-from .song_types import SongType
-
 class Song:
 
     def __init__(self, name, artist, link):

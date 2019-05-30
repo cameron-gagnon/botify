@@ -5,11 +5,11 @@ app = Flask(__name__)
 
 from .views.queue import queue
 from .views.error_handlers import error_handlers
-from .sockets.youtube import YouTubeSockets
+from .classes.players.youtube_player import YouTubePlayer
 
 app.register_blueprint(queue)
 app.register_blueprint(error_handlers)
 
 socketio = SocketIO(app)
 
-socketio.on_namespace(YouTubeSockets('/youtube'))
+socketio.on_namespace(YouTubePlayer.instance())

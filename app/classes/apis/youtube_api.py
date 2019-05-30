@@ -45,10 +45,12 @@ class YouTubeAPI(Config):
         # TODO: Check error condition when network errors?
 
         if response['items'][0]['id']['kind'] != 'youtube#video':
-            return False, "Error: Not a youtube video"
+            pprint(response)
+            my_response['error'] = "Error: Not a youtube video"
+            return False, my_response
 
         my_response['video_id'] = response['items'][0]['id']['videoId']
-        my_response['title'] = response['items'][0]['snippet']['title']
+        my_response['name'] = response['items'][0]['snippet']['title']
         my_response['artist'] = response['items'][0]['snippet']['channelTitle']
         my_response['error'] = ''
         my_response['song_uri'] = 'https://youtube.com/watch?v='
@@ -69,7 +71,7 @@ class YouTubeAPI(Config):
 
         # Check duration if it's too long
         if not self._duration_valid(duration):
-            my_response['error'] = "Error: Song {} is too long".format(my_response['title'])
+            my_response['error'] = "Error: Song {} is too long".format(my_response['name'])
             return False, my_response
 
         my_response['song_uri'] += my_response['video_id']

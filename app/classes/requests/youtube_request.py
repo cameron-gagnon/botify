@@ -1,20 +1,24 @@
-from .song_request import SongRequest
+import threading
+import time
+
+from app.classes.requests.song_request import SongRequest
 
 class YouTubeRequest(SongRequest):
     def __init__(self, requester, player, *args):
         super().__init__(requester, player, *args)
 
     def play(self):
-        pass
+        self.player.play(self.song.link)
 
     def pause(self):
-        pass
+        self.player.pause()
 
-    def volume(self):
-        pass
+    def set_volume(self, vol):
+        return self.player.set_volume(vol)
 
-    def info(self):
-        pass
+    def get_volume(self):
+        return self.player.get_volume()
 
-    def should_play_next_song(self):
-        pass
+    def done(self):
+        self.done = True
+        self.player.done()

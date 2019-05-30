@@ -30,9 +30,6 @@ class SpotifyRequest(SongRequest):
     def get_volume(self):
         return self.player.get_volume()
 
-    def info(self):
-        return '{} requested by {}'.format(self._info(), self.requester)
-
     def _song_done(self):
         while True:
             time.sleep(5)

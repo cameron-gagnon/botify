@@ -3,7 +3,7 @@
 from app.classes.apis.spotify_api import SpotifyAPI
 from app.classes.apis.youtube_api import YouTubeAPI
 from app.classes.requests.song_request_factory import song_request_factory
-from app.classes.song_types import SongType
+from app.classes.requests.song_types import SongType
 from app.decorators.decorators import handle_infinite_loop, check_queue_length
 
 class Queue:
@@ -91,7 +91,17 @@ class Queue:
 
     def _song_done(self):
         ''' Should only be called once per SongRequest '''
-        return self._next_song()
+        self.queue[0].done()
+
+        if len(self.queue) == 1:
+            response = self.NO_SONGS_IN_QUEUE
+        else:
+            self.start_playing(self.queue[1])
+            self.skippers = set()
+            response = self.queue[1].info()
+
+        del self.queue[0]
+        return response
 
     @check_queue_length
     def current_song(self):
@@ -117,23 +127,11 @@ class Queue:
         sr.play()
         return 'Playing the thicc beatz'
 
+    @check_queue_length
     def _next_song(self):
-        if not self.queue:
-            print('next_song with no current song')
-            return 'No current or next songs'
-
         response = None
-        if len(self.queue) == 1:
-            self.stop_playing()
-            response = self.NO_SONGS_IN_QUEUE
-        else:
-            self.start_playing(self.queue[1])
-            self.skippers = set()
-            response = self.queue[0].info()
-
-        self.queue[0].done()
-        del self.queue[0]
-        return response
+        self.stop_playing()
+        return self._song_done()
 
     def _validate_int(self, num):
         if not self.queue:

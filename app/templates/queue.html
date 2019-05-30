@@ -1,0 +1,114 @@
+<html>
+  <head>
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript" charset="utf-8">
+        var tag = document.createElement('script');
+        tag.src = 'http://www.youtube.com/iframe_api';
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        var player;
+
+        var apiLoaded = false;
+        function onYouTubeIframeAPIReady() {
+          apiLoaded = true;
+        }
+
+        function removeElement(elementId) {
+          var element = document.getElementById(elementId);
+          element.parentNode.removeChild(element);
+        }
+
+        function createPlayer() {
+
+          var frag = document.createRange().createContextualFragment('<div id="player"></div>');
+          var body = document.getElementsByTagName('body')[0];
+          body.append(frag);
+        }
+
+        function playerExists() {
+          return document.getElementById('player');
+        }
+
+        function stopVideo() {
+          console.log('stopping video');
+          console.log(player);
+          player.stopVideo();
+          removeElement('player');
+        }
+
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + '/youtube');
+        socket.on('connect', function() {
+          console.log('I\'m connected!');
+          socket.emit('my_event', {data: 'I\'m connected!'});
+        });
+
+        socket.on('done', function() {
+          console.log('Song confirmed done');
+          stopVideo();
+        });
+
+
+        socket.on('play', function(song_info) {
+          if (playerExists()) { return; }
+
+          createPlayer();
+          console.log('Preparing to play: ', song_info);
+          console.log('api loaded: ', apiLoaded);
+
+          if (!apiLoaded) { console.log("YT API not ready"); return; }
+
+          var videoId = song_info['data'].split('?v=')[1];
+
+          player = new YT.Player('player', {
+            height: '390',
+            width: '640',
+            videoId: videoId,
+            events: {
+              'onReady': onPlayerReady,
+              'onStateChange': onPlayerStateChange
+            }
+          });
+
+          function onPlayerReady(event) {
+            event.target.playVideo();
+          }
+
+          function nextSong() {
+            console.log('emitting next song');
+            socket.emit('next_song', {'data':'Next song plz!'});
+          }
+
+          function emitCorrectStateChange(playerStatus) {
+            if (playerStatus == -1) {
+              // unstarted
+              console.log('not started');
+            } else if (playerStatus == 0) {
+              console.log('next song');
+              // ended
+              nextSong();
+            } else if (playerStatus == 1) {
+              // playing
+              console.log('playing');
+            } else if (playerStatus == 2) {
+              // paused
+              console.log('paused');
+            } else if (playerStatus == 3) {
+              //buffering
+              console.log('buffering');
+            } else if (playerStatus == 5) {
+              // video cued
+              console.log('cued');
+            }
+          }
+
+          function onPlayerStateChange(event) {
+            emitCorrectStateChange(event.data);
+          }
+        });
+
+    </script>
+  </body>
+</html>

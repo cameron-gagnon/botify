@@ -1,4 +1,4 @@
-from app.classes.song import Song
+from app.classes.requests.song import Song
 
 class SongRequest:
 
@@ -23,5 +23,6 @@ class SongRequest:
     def done(self):
         self.song_done = True
 
-    def _info(self):
-        return '{} by {}'.format(self.song.name, self.song.artist)
+    def info(self):
+        return '{} by {}. Requested by: {}'.format(self.song.name,
+                self.song.artist, self.requester)
