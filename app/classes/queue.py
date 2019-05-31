@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.5
-
 from app.classes.apis.spotify_api import SpotifyAPI
 from app.classes.apis.youtube_api import YouTubeAPI
 from app.classes.requests.song_request_factory import song_request_factory
