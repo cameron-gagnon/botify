@@ -19,7 +19,7 @@ class SpotifyAPI(SpotifyBase):
             response['error'] = "Error: {} could not be found".format(song)
             return False, response
 
-        response['song_uri'] = search_res['tracks']['items'][0]['uri']
+        response['song_uri'] = search_res['tracks']['items'][0]['external_urls']['spotify']
         response['artist'] = search_res['tracks']['items'][0]['artists'][0]['name']
         response['name'] = search_res['tracks']['items'][0]['name']
         return True, response
