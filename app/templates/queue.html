@@ -33,7 +33,7 @@
         }
 
         function stopVideo() {
-          console.log('stopping video');
+          console.log('Stopping video');
           console.log(player);
           player.stopVideo();
           removeElement('player');
@@ -50,13 +50,27 @@
           stopVideo();
         });
 
+        socket.on('pause', function() {
+          console.log('pausing video');
+          player.pauseVideo();
+        });
+
+        socket.on('set_volume', function(data) {
+          console.log('setting volume', data);
+          player.setVolume(data['volume']);
+        });
+
+        socket.on('get_volume', function() {
+          var volume = player.getVolume();
+          console.log('Volume is: ', volume);
+          socket.emit('volume', {'volume': volume});
+        });
 
         socket.on('play', function(song_info) {
-          if (playerExists()) { return; }
+          if (playerExists()) { player.playVideo(); return; }
 
           createPlayer();
           console.log('Preparing to play: ', song_info);
-          console.log('api loaded: ', apiLoaded);
 
           if (!apiLoaded) { console.log("YT API not ready"); return; }
 
@@ -68,9 +82,14 @@
             videoId: videoId,
             events: {
               'onReady': onPlayerReady,
-              'onStateChange': onPlayerStateChange
+              'onStateChange': onPlayerStateChange,
+              'onError': onPlayerError,
             }
           });
+
+          function onPlayerError(event) {
+            console.log('Got an error: ', event);
+          }
 
           function onPlayerReady(event) {
             event.target.playVideo();

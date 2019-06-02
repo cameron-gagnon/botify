@@ -1,3 +1,5 @@
+import re
+
 from app.classes.apis.spotify_api import SpotifyAPI
 from app.classes.apis.youtube_api import YouTubeAPI
 from app.classes.requests.song_request_factory import song_request_factory
@@ -8,6 +10,9 @@ class Queue:
     NO_SONG = 'No current song'
     NO_SONGS_IN_QUEUE = 'No songs in the queue. Add one with !sr'
     MAX_LEN = 20
+    VOL_REGEX = '[\+|-]\d{1,3}'
+    ERR_TOO_LOUD = "Please don't make me go deaf while I play games :( Give a value between 0 and {} inclusive"
+    ERR_INVALID_VOL = "Please enter a valid number between 0 and {}, inclusive"
 
     def __init__(self):
         self.spotify_api = SpotifyAPI()
@@ -106,8 +111,21 @@ class Queue:
         return 'Currently Playing: ' + self.queue[0].info()
 
     @check_queue_length
-    def set_volume(self, volume):
-        return self.queue[0].set_volume(volume)
+    def set_volume(self, volume_percent):
+        max_volume = self.queue[0].max_volume()
+        matched = re.match(self.VOL_REGEX, volume_percent)
+        if matched:
+            volume_percent = self.queue[0].get_int_volume() + int(matched.group(0))
+
+        try:
+            volume_percent = self._clamp(int(volume_percent), 0, 100)
+        except ValueError:
+            return self.ERR_INVALID_VOL.format(max_volume)
+
+        if volume_percent > max_volume:
+            return self.ERR_TOO_LOUD.format(max_volume)
+
+        return self.queue[0].set_volume(volume_percent)
 
     @check_queue_length
     def get_volume(self):
@@ -142,6 +160,9 @@ class Queue:
         if num < 1 or num > len(self.queue):
             return False, "Please give a number between 1 and {}".format(len(self.queue))
         return True, num
+
+    def _clamp(self, n, minn, maxn):
+        return max(min(maxn, n), minn)
 
     def _should_skip(self, requester):
         if requester == 'stroopc' or requester == 'joker6878':

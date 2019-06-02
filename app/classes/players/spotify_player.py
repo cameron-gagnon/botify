@@ -6,7 +6,6 @@ from app.decorators.singleton import Singleton
 
 @Singleton
 class SpotifyPlayer(SpotifyBase):
-    VOL_REGEX = '[\+|-]\d{1,3}'
 
     def __init__(self):
         super().__init__()
@@ -17,22 +16,13 @@ class SpotifyPlayer(SpotifyBase):
         return self._parse_volume(self.sp.current_playback(market='US'))
 
     @handle_refresh
+    def get_int_volume(self):
+        return self._parse_int_volume(self.sp.current_playback(market='US'))
+
+    @handle_refresh
     def set_volume(self, volume_percent):
-        matched = re.match(self.VOL_REGEX, volume_percent)
-        if matched:
-            volume_percent = self.volume_percent + int(matched.group(0))
-
-        try:
-            volume_percent = self._clamp(int(volume_percent), 0, 100)
-        except ValueError:
-            return "Please enter a valid number between 1 and 50, inclusive"
-
-        if volume_percent > 50 and volume_percent != 69:
-            return "Please don't make me go deaf while I play games :( Give a value between 0 and 50, inclusive"
-
         self.sp.volume(volume_percent, device_id=self.RANGER_DEVICE_ID)
         self.volume_percent = volume_percent
-
         return "Volume set to {}".format(volume_percent)
 
     @handle_refresh
@@ -61,9 +51,15 @@ class SpotifyPlayer(SpotifyBase):
         self.sp.seek_track(postition_ms,device_id=self.RANGER_DEVICE_ID)
 
     def _parse_volume(self, response):
-        if response['device']['name'] == 'RANGER':
-            return "Volume is: {}".format(response['device']['volume_percent'])
-        return "Unable to get volume :("
+        if response['device']['name'] != 'RANGER':
+            return "Unable to get volume :("
+
+        return "Volume is: {}".format(self._parse_int_volume(response))
+
+    def _parse_int_volume(self, response):
+        if response['device']['name'] != 'RANGER':
+            return 0
+        return response['device']['volume_percent']
 
     def _current_song_name(self, response):
         #pprint(response)
@@ -86,6 +82,3 @@ class SpotifyPlayer(SpotifyBase):
                 "{album_name}. Here's the link! {link}".format(
                         song_name=song_name, artist_name=artist_name,
                         album_name=album_name, link=link)
-
-    def _clamp(self, n, minn, maxn):
-        return max(min(maxn, n), minn)

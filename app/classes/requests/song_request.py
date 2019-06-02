@@ -7,6 +7,7 @@ class SongRequest:
         self.player = player
         self.song_done = False
         self.song = Song(*args)
+        self.MAX_VOLUME = 50
 
     def play(self):
         pass
@@ -26,3 +27,9 @@ class SongRequest:
     def info(self):
         return '{} by {}. Requested by: {}'.format(self.song.name,
                 self.song.artist, self.requester)
+
+    def get_int_volume(self):
+        return self.player.get_int_volume()
+
+    def max_volume(self):
+        return self.MAX_VOLUME
