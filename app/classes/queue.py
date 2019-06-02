@@ -10,9 +10,13 @@ class Queue:
     NO_SONG = 'No current song'
     NO_SONGS_IN_QUEUE = 'No songs in the queue. Add one with !sr'
     MAX_LEN = 20
+    MAX_SONG_REQS_PER_PERSON = 3
     VOL_REGEX = '[\+|-]\d{1,3}'
     ERR_TOO_LOUD = "Please don't make me go deaf while I play games :( Give a value between 0 and {} inclusive"
     ERR_INVALID_VOL = "Please enter a valid number between 0 and {}, inclusive"
+    ERR_FULL_QUEUE = "Sorry, the queue is full right now :( Please add a song after the next one has played!"
+    ERR_TOO_MANY_REQUESTS = "You can only put {} number of songs on the queue"
+    ERR_SONG_ALREADY_EXISTS = "This song is already on the queue"
 
     def __init__(self):
         self.spotify_api = SpotifyAPI()
@@ -23,14 +27,16 @@ class Queue:
 
     def request_song(self, song, requester):
         if len(self.queue) >= self.MAX_LEN:
-            return "Sorry, the queue is full right now :( Please add a song after the next one has played!"
+            return self.ERR_FULL_QUEUE
+
+        if self.too_many_requests(requester):
+            return self.ERR_TOO_MANY_REQUESTS.format(self.MAX_SONG_REQS_PER_PERSON)
 
         song_type = None
         if self._is_youtube_link(song):
-            success, response = self.youtube_api.search(song)
-            if not success:
-                return response['error']
-            song_type = SongType.YouTube
+            success, response = self.youtube_api.is_valid_link(song)
+            if success:
+                song_type = SongType.YouTube
 
         if not song_type:
             success, response = self.spotify_api.search(song)
@@ -45,6 +51,9 @@ class Queue:
         if not song_type:
             return 'Could not find {} :('.format(song)
 
+        if self.song_already_on_queue(response):
+            return self.ERR_SONG_ALREADY_EXISTS
+
         song_request = song_request_factory(song_type, requester,
                 response['name'], response['artist'], response['song_uri'],
                 callback=self._song_done)
@@ -52,6 +61,21 @@ class Queue:
         response = self._add_to_queue(song_request)
         self._check_and_start_playing()
         return response
+
+    def song_already_on_queue(self, response):
+        for song in self.queue:
+            if song.song.name == response['name'] and \
+               song.song.artist == response['artist']:
+                   return True
+        return False
+
+    def too_many_requests(self, requester):
+        num_requests = 0
+        for song in self.queue:
+            if song.requester == requester:
+                num_requests += 1
+
+        return num_requests >= self.MAX_SONG_REQS_PER_PERSON
 
     def remove_song(self, requester):
         for i, song in reversed(list(enumerate(self.queue))):
@@ -82,7 +106,7 @@ class Queue:
         num_to_show = 3
         playlist_msg = 'The next songs are: '
         for i, song in enumerate(self.queue[offset-1:offset-1+num_to_show]):
-            playlist_msg += '#{}: {}'.format(i+offset, song.info())
+            playlist_msg += '#{}: {} '.format(i+offset, song.info())
 
         return playlist_msg
 

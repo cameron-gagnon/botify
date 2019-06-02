@@ -1,17 +1,19 @@
 import os
 import yaml
 import isodate
-
-from app.helpers.config import Config
-
+import requests
 from pprint import pprint
 
 import googleapiclient.discovery
 import googleapiclient.errors
 
-scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+from app.helpers.config import Config
+
 
 class YouTubeAPI(Config):
+
+    TEST_LINK_ENDPOINT = "http://www.youtube.com/oembed?format=json&url={}"
+    SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
     def __init__(self):
         super().__init__('youtube')
@@ -26,6 +28,18 @@ class YouTubeAPI(Config):
         # Get credentials and create an API client
         self.youtube = googleapiclient.discovery.build(
             api_service_name, api_version, developerKey=self.config['api_key'])
+
+    def is_valid_link(self, link):
+        my_response = {}
+        r = requests.get(self.TEST_LINK_ENDPOINT.format(link))
+        if r.status_code == 200:
+            response = r.json()
+            my_response['artist'] = response['author_name']
+            my_response['name'] = response['title']
+            my_response['song_uri'] = link
+            return True, my_response
+
+        return False, my_response
 
     def search(self, query):
         my_response = {}
@@ -81,4 +95,5 @@ class YouTubeAPI(Config):
 
 if __name__ == "__main__":
     yt_api = YouTubeAPI()
-    yt_api.search('https://youtu.be/18JQUYgpOlw')
+    #yt_api.search('https://youtu.be/18JQUYgpOlw')
+    yt_api.is_valid_link('https://youtu.be/18JQUYgpOlw')

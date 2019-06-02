@@ -25,8 +25,8 @@ class SongRequest:
         self.song_done = True
 
     def info(self):
-        return '{} by {}. Requested by: {}'.format(self.song.name,
-                self.song.artist, self.requester)
+        return '{} by {}. Requested by: {}. {}'.format(self.song.name,
+                self.song.artist, self.requester, self.song.link)
 
     def get_int_volume(self):
         return self.player.get_int_volume()
