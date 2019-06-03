@@ -4,3 +4,4 @@
 * Check if youtube video has more likes than dislikes
 * Check if user becomes banned and clear their songs from the queue
 * Pulse the lights to the music
+* Remove 'by' from user's searches
