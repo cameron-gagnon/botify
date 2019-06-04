@@ -36,10 +36,19 @@ class YouTubeAPI(Config):
             response = r.json()
             my_response['artist'] = response['author_name']
             my_response['name'] = response['title']
-            my_response['song_uri'] = link
+            my_response['song_uri'] = self.clean_link(link)
             return True, my_response
 
         return False, my_response
+
+
+    def clean_link(self, link):
+        if self._is_short_link(link):
+            return "https://youtube.com/watch?v={}".format(link.split('/')[3])
+        return link
+
+    def _is_short_link(self, link):
+        return 'youtu.be' in link
 
     def search(self, query):
         my_response = {}
