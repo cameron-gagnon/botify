@@ -1,4 +1,4 @@
-from app.classes.requests.song import Song
+from app.models.requests.song import Song
 
 class SongRequest:
 

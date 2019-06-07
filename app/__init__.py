@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 from .views.queue import queue
 from .views.error_handlers import error_handlers
-from .classes.players.youtube_player import YouTubePlayer
+from .models.players.youtube_player import YouTubePlayer
 
 app.register_blueprint(queue)
 app.register_blueprint(error_handlers)

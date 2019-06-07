@@ -1,4 +1,4 @@
-from app.classes.queue import Queue
+from app.models.queue import Queue
 
 from flask import Blueprint, request, render_template
 

@@ -1,9 +1,9 @@
 import re
 
-from app.classes.apis.spotify_api import SpotifyAPI
-from app.classes.apis.youtube_api import YouTubeAPI
-from app.classes.requests.song_request_factory import song_request_factory
-from app.classes.requests.song_types import SongType
+from app.models.apis.spotify_api import SpotifyAPI
+from app.models.apis.youtube_api import YouTubeAPI
+from app.models.requests.song_request_factory import song_request_factory
+from app.models.requests.song_types import SongType
 from app.decorators.decorators import handle_infinite_loop, check_queue_length
 
 class Queue:

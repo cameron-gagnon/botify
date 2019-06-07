@@ -1,4 +1,4 @@
-from ..classes.botify import SpotifyPlayer
+from ..models.botify import SpotifyPlayer
 
 from flask import Blueprint, request
 
