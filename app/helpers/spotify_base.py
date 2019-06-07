@@ -7,7 +7,7 @@ class SpotifyBase(Config):
     RANGER_DEVICE_ID = '97b75274a2b8596ba6eaedf3d7caa971921fcd9a'
 
     def __init__(self):
-        super().__init__('botify')
+        super().__init__('spotify')
         self._refresh()
 
     def _refresh(self):

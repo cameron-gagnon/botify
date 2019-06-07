@@ -1,0 +1,10 @@
+youtube:
+  api_key:
+
+spotify:
+  username:
+  playlist:
+  scope:
+  client_id:
+  client_secret:
+  redirect_uri:
