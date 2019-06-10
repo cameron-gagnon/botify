@@ -1,10 +1,7 @@
 import re
 
-from app.models.apis.spotify_api import SpotifyAPI
-from app.models.apis.youtube_api import YouTubeAPI
-from app.models.requests.song_request_factory import song_request_factory
-from app.models.requests.song_types import SongType
 from app.decorators.decorators import handle_infinite_loop, check_queue_length
+from app.helpers.searcher import Searcher
 
 class Queue:
     NO_SONG = 'No current song'
@@ -18,9 +15,8 @@ class Queue:
     ERR_TOO_MANY_REQUESTS = "You can only put {} number of songs on the queue"
     ERR_SONG_ALREADY_EXISTS = "This song is already on the queue"
 
-    def __init__(self):
-        self.spotify_api = SpotifyAPI()
-        self.youtube_api = YouTubeAPI()
+    def __init__(self, searcher):
+        self.searcher = searcher
         self.queue = []
         self.skippers = set()
         self.playback_info = {}
@@ -32,31 +28,12 @@ class Queue:
         if self.too_many_requests(requester):
             return self.ERR_TOO_MANY_REQUESTS.format(self.MAX_SONG_REQS_PER_PERSON)
 
-        song_type = None
-        if self._is_youtube_link(song):
-            success, response = self.youtube_api.is_valid_link(song)
-            if success:
-                song_type = SongType.YouTube
-
-        if not song_type:
-            success, response = self.spotify_api.search(song)
-            if success:
-                song_type = SongType.Spotify
-
-        if not song_type:
-            success, response = self.youtube_api.search(song)
-            if success:
-                song_type = SongType.YouTube
-
-        if not song_type:
-            return 'Could not find {} :('.format(song)
+        success, response = self.searcher.search(song)
+        if not success:
+            return response['error']
 
         if self.song_already_on_queue(response):
             return self.ERR_SONG_ALREADY_EXISTS
-
-        song_request = song_request_factory(song_type, requester,
-                response['name'], response['artist'], response['song_uri'],
-                callback=self._song_done)
 
         response = self._add_to_queue(song_request)
         self._check_and_start_playing()
@@ -206,5 +183,3 @@ class Queue:
         return "Added {} to position number #{}".format(
                 songRequest.info(), len(self.queue))
 
-    def _is_youtube_link(self, link):
-        return 'youtube' in link or 'youtu.be' in link

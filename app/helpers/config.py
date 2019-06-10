@@ -11,4 +11,4 @@ class Config:
           try:
               self.config = yaml.safe_load(stream)[section]
           except yaml.YAMLError as e:
-              print(e)
+              print("Error parsing Config YAML file: {}".format(e))
