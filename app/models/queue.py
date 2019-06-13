@@ -14,12 +14,19 @@ class Queue:
     ERR_FULL_QUEUE = "Sorry, the queue is full right now :( Please add a song after the next one has played!"
     ERR_TOO_MANY_REQUESTS = "You can only put {} number of songs on the queue"
     ERR_SONG_ALREADY_EXISTS = "This song is already on the queue"
+    SPECIAL_ALL_PERMS = ['star9166', 'stroopg', 'tunaprimo', 'holymoley420', 'stroopc']
+    SPECIAL_UNLIMITED_PERMS = SPECIAL_ALL_PERMS
+    SPECIAL_PROMOTE_PERMS = SPECIAL_ALL_PERMS + ['joker6878']
+    SPECIAL_NEXT_SONG_PERMS = SPECIAL_ALL_PERMS + ['joker6878']
 
     def __init__(self, searcher):
         self.searcher = searcher
         self.queue = []
         self.skippers = set()
         self.playback_info = {}
+        print(self.SPECIAL_UNLIMITED_PERMS)
+        print(self.SPECIAL_PROMOTE_PERMS)
+        print(self.SPECIAL_NEXT_SONG_PERMS)
 
     def request_song(self, song, requester):
         if len(self.queue) >= self.MAX_LEN:
@@ -52,7 +59,7 @@ class Queue:
             if song.requester == requester:
                 num_requests += 1
 
-        return num_requests >= self.MAX_SONG_REQS_PER_PERSON
+        return num_requests >= self.MAX_SONG_REQS_PER_PERSON and requester not in self.SPECIAL_UNLIMITED_PERMS
 
     def remove_song(self, requester):
         for i, song in reversed(list(enumerate(self.queue))):
@@ -65,8 +72,9 @@ class Queue:
         return self.NO_SONGS_IN_QUEUE
 
     def promote(self, requester, pos):
-        if requester not in ['stroopc', 'joker6878']:
-            return "Sorry, only the DJs can promote songs :/"
+        print(self.SPECIAL_PROMOTE_PERMS)
+        if requester not in self.SPECIAL_PROMOTE_PERMS:
+            return "Sorry, only " + self.SPECIAL_PROMOTE_PERMS.join(', ') + " can promote songs"
 
         success, pos = self._validate_int(pos)
         if not success:
@@ -118,13 +126,7 @@ class Queue:
         if matched:
             volume_percent = self.queue[0].get_int_volume() + int(matched.group(0))
 
-        try:
-            volume_percent = self._clamp(int(volume_percent), 0, 100)
-        except ValueError:
-            return self.ERR_INVALID_VOL.format(max_volume)
-
-        if volume_percent > max_volume:
-            return self.ERR_TOO_LOUD.format(max_volume)
+        volume_percent = self._clamp(int(volume_percent), 0, max_volume)
 
         return self.queue[0].set_volume(volume_percent)
 
@@ -166,7 +168,7 @@ class Queue:
         return max(min(maxn, n), minn)
 
     def _should_skip(self, requester):
-        if requester == 'stroopc' or requester == 'joker6878':
+        if requester in self.SPECIAL_NEXT_SONG_PERMS:
             return True
 
         self.skippers.add(requester)
