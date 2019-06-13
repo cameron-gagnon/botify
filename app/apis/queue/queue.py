@@ -1,3 +1,5 @@
+from flask import request
+
 from app.models.queue import Queue
 from app.helpers.searcher import Searcher
 from app.apis.queue import bp as queue_bp

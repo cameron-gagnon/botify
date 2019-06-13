@@ -28,21 +28,21 @@ class Queue:
         if self.too_many_requests(requester):
             return self.ERR_TOO_MANY_REQUESTS.format(self.MAX_SONG_REQS_PER_PERSON)
 
-        success, response = self.searcher.search(song)
+        success, song_request = self.searcher.search(song, requester)
         if not success:
-            return response['error']
+            return song_request
 
-        if self.song_already_on_queue(response):
+        if self.song_already_on_queue(song_request):
             return self.ERR_SONG_ALREADY_EXISTS
 
         response = self._add_to_queue(song_request)
         self._check_and_start_playing()
         return response
 
-    def song_already_on_queue(self, response):
+    def song_already_on_queue(self, song_request):
         for song in self.queue:
-            if song.song.name == response['name'] and \
-               song.song.artist == response['artist']:
+            if song.name == song_request.name and \
+               song.artist == song_request.artist:
                    return True
         return False
 
@@ -61,7 +61,7 @@ class Queue:
                 return 'Can\'t remove the currently playing song'
             if song.requester == requester:
                 removed = self.queue.pop(i)
-                return 'Removed: {}'.format(removed.song.name)
+                return 'Removed: {}'.format(removed.name)
         return self.NO_SONGS_IN_QUEUE
 
     def promote(self, requester, pos):

@@ -9,7 +9,7 @@ class YouTubeRequest(SongRequest):
         self.MAX_VOLUME = 35
 
     def play(self):
-        return self.player.play(self.song.link)
+        return self.player.play(self.link)
 
     def pause(self):
         return self.player.pause()

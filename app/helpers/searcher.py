@@ -9,7 +9,7 @@ class Searcher:
         self.spotify_api = SpotifyAPI()
         self.youtube_api = YouTubeAPI()
 
-    def search(self, song):
+    def search(self, song, requester):
         song_type = None
         if self._is_youtube_link(song):
             success, response = self.youtube_api.is_valid_link(song)
@@ -17,21 +17,16 @@ class Searcher:
                 song_type = SongType.YouTube
 
         if not song_type:
-            success, response = self.spotify_api.search(song)
-            if success:
-                song_type = SongType.Spotify
-
-        if not song_type:
             success, response = self.youtube_api.search(song)
             if success:
                 song_type = SongType.YouTube
 
         if not song_type:
-            return 'Could not find {} :('.format(song)
+            return False, 'Could not find {} :('.format(song)
 
         song_request = song_request_factory(song_type, requester,
-                response['name'], response['artist'], response['song_uri'],
-                callback=self._song_done)
+                response['name'], response['artist'], response['song_uri'])
+        return True, song_request
 
     def _is_youtube_link(self, link):
         return 'youtube' in link or 'youtu.be' in link
