@@ -24,9 +24,6 @@ class Queue:
         self.queue = []
         self.skippers = set()
         self.playback_info = {}
-        print(self.SPECIAL_UNLIMITED_PERMS)
-        print(self.SPECIAL_PROMOTE_PERMS)
-        print(self.SPECIAL_NEXT_SONG_PERMS)
 
     def request_song(self, song, requester):
         if len(self.queue) >= self.MAX_LEN:
