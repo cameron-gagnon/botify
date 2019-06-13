@@ -3,6 +3,7 @@ import yaml
 import isodate
 import requests
 from pprint import pprint
+import urllib.parse as urlparse
 
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -43,9 +44,14 @@ class YouTubeAPI(Config):
 
 
     def clean_link(self, link):
-        if self._is_short_link(link):
-            return "https://youtube.com/watch?v={}".format(link.split('/')[3])
-        return link
+        base_link = "https://youtube.com/watch?v={}"
+        v_id = self._parse_v_id_from_link(link)
+        return base_link.format(v_id)
+
+    def _parse_v_id_from_link(self, link):
+        parsed = urlparse.urlparse(link)
+        # default's to mt. joy sheep if an improperly formatted link was given
+        return urlparse.parse_qs(parsed.query).get('v', 'Xl1psdL6z0c')
 
     def _is_short_link(self, link):
         return 'youtu.be' in link
