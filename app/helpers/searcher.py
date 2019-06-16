@@ -9,7 +9,7 @@ class Searcher:
         self.spotify_api = SpotifyAPI()
         self.youtube_api = YouTubeAPI()
 
-    def search(self, song, requester):
+    def search(self, song, requester, callback):
         song_type = None
         if self._is_youtube_link(song):
             success, response = self.youtube_api.is_valid_link(song)
@@ -17,6 +17,11 @@ class Searcher:
                 song_type = SongType.YouTube
 
         song_type = None
+        if not song_type:
+            success, response = self.spotify_api.search(song)
+            if success:
+                song_type = SongType.Spotify
+
         if not song_type:
             success, response = self.youtube_api.search(song)
             if success:

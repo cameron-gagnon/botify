@@ -19,7 +19,7 @@ class SpotifyRequest(SongRequest):
         ms = 0
         if self.playback_info and self.playback_info['progress_ms']:
             ms = self.playback_info['progress_ms']
-        self.player.play_track(self.song.link, position_ms=ms)
+        self.player.play_track(self.link, position_ms=ms)
 
     def pause(self):
         self.player.pause_track()
