@@ -39,10 +39,16 @@ class SpotifyPlayer(SpotifyBase):
 
     @handle_refresh
     def pause_track(self):
-        self.sp.pause_playback(device_id=self.RANGER_DEVICE_ID)
+        success, response = self.request_playback_info()
+        if not success or not response:
+            print("PAUSE TRACK: response=", response)
+            return
+        if response['is_playing']:
+            self.sp.pause_playback(device_id=self.RANGER_DEVICE_ID)
 
     @handle_refresh
     def play_track(self, uri, position_ms = 0):
+        print("Playing track", uri, position_ms)
         self.sp.start_playback(device_id=self.RANGER_DEVICE_ID,
                 position_ms = position_ms, uris=[uri])
 

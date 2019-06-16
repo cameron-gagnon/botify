@@ -37,11 +37,13 @@ class SpotifyRequest(SongRequest):
                 return
 
             success, self.playback_info = self.player.request_playback_info()
+            print("request_player info:", success, self.playback_info)
             if not success:
                 continue
 
-            if self.playback_info['progress_ms'] == 0 \
+            if self.playback_info \
+                and self.playback_info['progress_ms'] == 0 \
                 and not self.playback_info['is_playing'] \
-                and self.playback_info['name'] == self.song.name:
+                and self.playback_info['name'] == self.name:
                 self.callback()
                 return
