@@ -16,6 +16,7 @@ class Searcher:
             if success:
                 song_type = SongType.YouTube
 
+        song_type = None
         if not song_type:
             success, response = self.youtube_api.search(song)
             if success:
@@ -25,7 +26,8 @@ class Searcher:
             return False, 'Could not find {} :('.format(song)
 
         song_request = song_request_factory(song_type, requester,
-                response['name'], response['artist'], response['song_uri'])
+                response['name'], response['artist'], response['song_uri'],
+                song_type, callback=callback)
         return True, song_request
 
     def _is_youtube_link(self, link):

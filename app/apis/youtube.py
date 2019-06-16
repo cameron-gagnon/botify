@@ -51,7 +51,7 @@ class YouTubeAPI(Config):
     def _parse_v_id_from_link(self, link):
         parsed = urlparse.urlparse(link)
         # default's to mt. joy sheep if an improperly formatted link was given
-        return urlparse.parse_qs(parsed.query).get('v', 'Xl1psdL6z0c')
+        return urlparse.parse_qs(parsed.query).get('v', ['Xl1psdL6z0c'])[0]
 
     def _is_short_link(self, link):
         return 'youtu.be' in link

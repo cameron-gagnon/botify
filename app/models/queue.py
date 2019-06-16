@@ -2,6 +2,9 @@ import re
 
 from app.decorators.decorators import handle_infinite_loop, check_queue_length
 from app.helpers.searcher import Searcher
+from app.helpers.song_request_factory import song_request_factory
+from app.models.requests.song_request import SongRequest
+from app import db
 
 class Queue:
     NO_SONG = 'No current song'
@@ -14,8 +17,8 @@ class Queue:
     ERR_FULL_QUEUE = "Sorry, the queue is full right now :( Please add a song after the next one has played!"
     ERR_TOO_MANY_REQUESTS = "You can only put {} number of songs on the queue"
     ERR_SONG_ALREADY_EXISTS = "This song is already on the queue"
-    SPECIAL_ALL_PERMS = ['star9166', 'stroopg', 'tunaprimo', 'holymoley420', 'stroopc']
-    SPECIAL_UNLIMITED_PERMS = SPECIAL_ALL_PERMS
+    SPECIAL_ALL_PERMS = ['star9166', 'stroopg', 'tunaprimo', 'holymoley420', 'stroopc', 'simplevar']
+    SPECIAL_UNLIMITED_PERMS = SPECIAL_ALL_PERMS + ['joker6878']
     SPECIAL_PROMOTE_PERMS = SPECIAL_ALL_PERMS + ['joker6878']
     SPECIAL_NEXT_SONG_PERMS = SPECIAL_ALL_PERMS + ['joker6878']
 
@@ -25,6 +28,8 @@ class Queue:
         self.skippers = set()
         self.playback_info = {}
 
+        self._fill_queue()
+
     def request_song(self, song, requester):
         if len(self.queue) >= self.MAX_LEN:
             return self.ERR_FULL_QUEUE
@@ -32,7 +37,8 @@ class Queue:
         if self.too_many_requests(requester):
             return self.ERR_TOO_MANY_REQUESTS.format(self.MAX_SONG_REQS_PER_PERSON)
 
-        success, song_request = self.searcher.search(song, requester)
+        success, song_request = self.searcher.search(song, requester,
+                self._next_song)
         if not success:
             return song_request
 
@@ -65,6 +71,7 @@ class Queue:
                 return 'Can\'t remove the currently playing song'
             if song.requester == requester:
                 removed = self.queue.pop(i)
+                self._rm_song_from_db(removed)
                 return 'Removed: {}'.format(removed.name)
         return self.NO_SONGS_IN_QUEUE
 
@@ -98,6 +105,18 @@ class Queue:
 
         return self._next_song()
 
+    def _fill_queue(self):
+        songs = SongRequest.query.all()
+        for song in songs:
+            self.queue.append(song_request_factory(song.song_type, song.requester,
+                song.name, song.artist, song.link,
+                song.song_type, callback=self._next_song))
+
+    def _rm_song_from_db(self, song_to_del):
+        song = SongRequest.query.filter_by(link=song_to_del.link).first()
+        db.session.delete(song)
+        db.session.commit()
+
     def _song_done(self):
         ''' Should only be called once per SongRequest '''
         self.queue[0].done()
@@ -108,6 +127,8 @@ class Queue:
             self.start_playing(self.queue[1])
             self.skippers = set()
             response = self.queue[1].info()
+
+        self._rm_song_from_db(self.queue[0])
 
         del self.queue[0]
         return response
@@ -178,6 +199,9 @@ class Queue:
         self.start_playing()
 
     def _add_to_queue(self, songRequest):
+        db.session.add(songRequest)
+        db.session.commit()
+
         self.queue.append(songRequest)
         return "Added {} to position number #{}".format(
                 songRequest.info(), len(self.queue))

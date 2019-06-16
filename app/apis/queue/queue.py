@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, render_template
 
 from app.models.queue import Queue
 from app.helpers.searcher import Searcher

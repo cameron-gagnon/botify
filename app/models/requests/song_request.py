@@ -1,4 +1,12 @@
-class SongRequest:
+from app import db
+
+class SongRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    requester = db.Column(db.String(128), index=True)
+    song_type = db.Column(db.String(128))
+    name = db.Column(db.String(128), index=True)
+    artist = db.Column(db.String(128), index=True)
+    link = db.Column(db.String(256), index=True, unique=True)
 
     MAX_VOLUME = 50
 
@@ -8,6 +16,7 @@ class SongRequest:
         self.name = args[0]
         self.artist = args[1]
         self.link = args[2]
+        self.song_type = args[3]
 
         self.song_done = False
 
