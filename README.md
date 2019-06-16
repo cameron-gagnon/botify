@@ -2,6 +2,7 @@
 
 * Check if youtube video has more likes than dislikes
 * Check if user becomes banned and clear their songs from the queue
+* Admin commands: !clear, !close, !open, !delete #{}
 * Remove 'by' from user's searches
 * Check if a user is VIP or Mod and allow them to put more songs on the queue
 * !commands with sub-commands for each additional command
@@ -20,5 +21,5 @@
 
 Done:
 * back botify by a DB
-* cap volume instead of erroring out
 * Pulse the lights to the music
+* If volume is over or under the limit, cap it at the limit instead of erroring
