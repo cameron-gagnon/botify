@@ -14,8 +14,10 @@ class YouTubePlayer(YouTubeSockets):
         self.volume = 25
 
     def play(self, link):
-        print("Emitting play")
-        emit("play", {"data": link}, broadcast=True, namespace='/youtube')
+        from main import socketio
+        print('trying to emit play')
+        socketio.emit("play", {"data": link}, broadcast=True, namespace='/youtube')
+
         return 'Playing video!'
 
     def pause(self):

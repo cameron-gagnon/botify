@@ -1,3 +1,7 @@
+import gevent
+from gevent import monkey
+monkey.patch_all()
+
 from flask import Flask
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
@@ -25,7 +29,7 @@ def create_app(config_class=Config):
     app.register_blueprint(queue_bp)
     app.register_blueprint(errors_bp)
 
-    socketio = SocketIO(app)
+    socketio = SocketIO(app, async_mode='gevent', message_queue='redis://localhost:6379/0')
     socketio.on_namespace(YouTubePlayer.instance())
 
     return app, socketio

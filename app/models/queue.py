@@ -1,4 +1,5 @@
 import re
+import requests
 
 from app.decorators.decorators import handle_infinite_loop, check_queue_length
 from app.helpers.searcher import Searcher
@@ -18,8 +19,9 @@ class Queue:
     ERR_FULL_QUEUE = "Sorry, the queue is full right now :( Please add a song after the next one has played!"
     ERR_TOO_MANY_REQUESTS = "You can only put {} number of songs on the queue"
     ERR_SONG_ALREADY_EXISTS = "This song is already on the queue"
-    SPECIAL_ALL_PERMS = ['star9166', 'stroopg', 'tunaprimo', 'holymoley420', 'stroopc', 'simplevar', 'hidans_fire']
-    SPECIAL_UNLIMITED_PERMS = SPECIAL_ALL_PERMS + ['joker6878']
+    SPECIAL_ALL_PERMS = ['star9166', 'stroopg', 'tunaprimo', 'holymoley420',
+            'stroopc', 'simplevar', 'hidans_fire', 'data_day_life']
+    SPECIAL_UNLIMITED_PERMS = SPECIAL_ALL_PERMS + ['joker6878', 'mrcool909090']
     SPECIAL_PROMOTE_PERMS = SPECIAL_ALL_PERMS + ['joker6878']
     SPECIAL_NEXT_SONG_PERMS = SPECIAL_ALL_PERMS + ['joker6878']
 
@@ -77,7 +79,7 @@ class Queue:
 
     def promote(self, requester, pos):
         if requester not in self.SPECIAL_PROMOTE_PERMS:
-            return "Sorry, only " + self.SPECIAL_PROMOTE_PERMS.join(', ') + " can promote songs"
+            return "Sorry, only " + ', '.join(self.SPECIAL_PROMOTE_PERMS) + " can promote songs"
 
         success, pos = self._validate_int(pos)
         if not success:
@@ -112,9 +114,9 @@ class Queue:
                 song.song_type, callback=self._next_song))
 
     def _rm_song_from_db(self, song_to_del):
-        # this is run from within a thread and won't have access to the app
-        # context unless this is given
         with app.app_context():
+            # this is run from within a thread and won't have access to the app
+            # context unless this is given
             song = SongRequest.query.filter_by(link=song_to_del.link).first()
             db.session.delete(song)
             db.session.commit()

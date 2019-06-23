@@ -1,5 +1,7 @@
-import threading
+import gevent
 import time
+
+from flask_socketio import emit
 
 from app.models.requests.song_request import SongRequest
 
@@ -14,7 +16,7 @@ class SpotifyRequest(SongRequest):
     def play(self):
         if not self.thread_started:
             self.thread_started = True
-            threading.Thread(target=self._song_done).start()
+            gevent.spawn(self._song_done)
 
         ms = 0
         if self.playback_info and self.playback_info['progress_ms']:
@@ -32,7 +34,7 @@ class SpotifyRequest(SongRequest):
 
     def _song_done(self):
         while True:
-            time.sleep(5)
+            gevent.sleep(5)
             if self.song_done:
                 return
 
@@ -45,5 +47,6 @@ class SpotifyRequest(SongRequest):
                 and self.playback_info['progress_ms'] == 0 \
                 and not self.playback_info['is_playing'] \
                 and self.playback_info['name'] == self.name:
+                print("Executing callback")
                 self.callback()
                 return
