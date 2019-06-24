@@ -1,19 +1,24 @@
+import json
+
 from flask import request, render_template
 
 from app.models.queue import Queue
 from app.helpers.searcher import Searcher
+from app.players.spotify import SpotifyPlayer
 from app.apis.queue import bp as queue_bp
 
-song_queue = Queue(Searcher())
+song_queue = Queue(Searcher(), SpotifyPlayer.instance())
 
 @queue_bp.route('/request_song', methods=['POST'])
 def request_song():
     query = request.form.get('query')
-    user = request.form.get('user')
+    userinfo = json.loads(request.form.get('userinfo'))
+
+    print(userinfo)
     if not query:
         return "Type '!sr DAMN. Kendrick Lamar' to search for DAMN. by Kendrick Lamar"
 
-    response = song_queue.request_song(query, user)
+    response = song_queue.request_song(query, userinfo)
     return response
 
 @queue_bp.route('/wrong_song', methods=['POST'])
@@ -24,9 +29,11 @@ def wrong_song():
 @queue_bp.route('/volume', methods=['POST'])
 def volume():
     volume = request.form.get('volume')
+    userinfo = json.loads(request.form.get('userinfo'))
     if not volume:
         return song_queue.get_volume()
-    return song_queue.set_volume(volume)
+
+    return song_queue.set_volume(volume, requester_info=userinfo)
 
 @queue_bp.route('/current_song', methods=['GET'])
 def current_song():
@@ -34,8 +41,8 @@ def current_song():
 
 @queue_bp.route('/next_song', methods=['POST'])
 def next_song():
-    user = request.form.get('user')
-    return song_queue.next_song(user)
+    userinfo = json.loads(request.form.get('userinfo'))
+    return song_queue.next_song(userinfo)
 
 @queue_bp.route('/playlist', methods=['GET'])
 @queue_bp.route('/playlist/<offset>', methods=['GET'])
@@ -45,16 +52,18 @@ def playlist(offset=1):
 @queue_bp.route('/promote', methods=['POST'])
 def promote():
     pos = request.form.get('pos')
-    user = request.form.get('user')
-    return song_queue.promote(user, pos)
+    userinfo = json.loads(request.form.get('userinfo'))
+    return song_queue.promote(pos, requester_info=userinfo)
 
-@queue_bp.route('/pause', methods=['GET'])
+@queue_bp.route('/pause', methods=['POST'])
 def pause_song():
-    return song_queue.stop_playing()
+    userinfo = json.loads(request.form.get('userinfo'))
+    return song_queue.stop_playing(requester_info=userinfo)
 
-@queue_bp.route('/play', methods=['GET'])
+@queue_bp.route('/play', methods=['POST'])
 def play_song():
-    return song_queue.start_playing()
+    userinfo = json.loads(request.form.get('userinfo'))
+    return song_queue.start_playing(requester_info=userinfo)
 
 @queue_bp.route('/queue', methods=['GET'])
 def yt_queue():

@@ -16,7 +16,6 @@ class Searcher:
             if success:
                 song_type = SongType.YouTube
 
-        song_type = None
         if not song_type:
             success, response = self.spotify_api.search(song)
             if success:

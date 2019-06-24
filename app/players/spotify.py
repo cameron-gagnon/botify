@@ -11,6 +11,9 @@ class SpotifyPlayer(SpotifyBase):
         super().__init__()
         self.volume_percent = 35
 
+    def play_default_playlist(self):
+        self.play_track(context_uri=self.DEFAULT_PLAYLIST_TRACK)
+
     @handle_refresh
     def get_volume(self):
         return self._parse_volume(self.sp.current_playback(market='US'))
@@ -47,10 +50,13 @@ class SpotifyPlayer(SpotifyBase):
             self.sp.pause_playback(device_id=self.RANGER_DEVICE_ID)
 
     @handle_refresh
-    def play_track(self, uri, position_ms = 0):
+    def play_track(self, uri=None, position_ms = 0, context_uri=None):
+        if uri:
+            uri = [uri]
+
         print("Playing track", uri, position_ms)
         self.sp.start_playback(device_id=self.RANGER_DEVICE_ID,
-                position_ms = position_ms, uris=[uri])
+                position_ms = position_ms, uris=uri, context_uri=context_uri)
 
     @handle_refresh
     def seek_track(self, postition_ms):

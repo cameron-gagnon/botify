@@ -21,6 +21,7 @@ def create_app(config_class=Config):
 
     # Queue needs the app context to be filled on __init__
     with app.app_context():
+        db.create_all()
         from app.apis.queue import bp as queue_bp
 
     from app.errors import bp as errors_bp

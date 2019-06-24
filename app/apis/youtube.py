@@ -1,9 +1,10 @@
-import os
-import yaml
-import isodate
-import requests
 from pprint import pprint
+import isodate
+import os
+import re
+import requests
 import urllib.parse as urlparse
+import yaml
 
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -15,6 +16,7 @@ class YouTubeAPI(Config):
 
     TEST_LINK_ENDPOINT = "http://www.youtube.com/oembed?format=json&url={}"
     SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
+    LINK_REGEX = '\/([^\/]+)\?'
 
     def __init__(self):
         super().__init__('youtube')
@@ -38,20 +40,37 @@ class YouTubeAPI(Config):
             my_response['artist'] = response['author_name']
             my_response['name'] = response['title']
             my_response['song_uri'] = self.clean_link(link)
+
             return True, my_response
 
         return False, my_response
 
-
     def clean_link(self, link):
         base_link = "https://youtube.com/watch?v={}"
         v_id = self._parse_v_id_from_link(link)
+        if not v_id:
+            matched = re.match(self.LINK_REGEX, link)
+            if matched:
+                v_id = matched.group(0)
+                print('matched v_id is', v_id)
+
+        # probably a shortened link with/without '?t=xx' on it
+        if not v_id:
+            print('no v_id', v_id)
+            last_slash_idx = link.rfind('/')
+            first_question_mark = link.find('?')
+            if first_question_mark == -1:
+                v_id = link[last_slash_idx+1:]
+            else:
+                v_id = link[last_slash_idx+1:first_question_mark]
+            print('vid is')
+
         return base_link.format(v_id)
 
     def _parse_v_id_from_link(self, link):
         parsed = urlparse.urlparse(link)
         # default's to mt. joy sheep if an improperly formatted link was given
-        return urlparse.parse_qs(parsed.query).get('v', ['Xl1psdL6z0c'])[0]
+        return urlparse.parse_qs(parsed.query).get('v', [None])[0]
 
     def _is_short_link(self, link):
         return 'youtu.be' in link
