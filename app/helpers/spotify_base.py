@@ -10,7 +10,6 @@ class SpotifyBase(Config):
     def __init__(self):
         super().__init__('spotify')
         self._refresh()
-        self.sp.shuffle(True)
 
     def _refresh(self):
         self.token = util.prompt_for_user_token(self.config['username'],
