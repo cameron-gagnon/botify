@@ -12,6 +12,7 @@ class SpotifyPlayer(SpotifyBase):
         self.volume_percent = 35
 
     def play_default_playlist(self):
+        self.sp.shuffle(true, self.RANGER_DEVICE_ID)
         self.play_track(context_uri=self.DEFAULT_PLAYLIST_TRACK)
 
     @handle_refresh

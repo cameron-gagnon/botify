@@ -7,6 +7,7 @@ class SongRequest(db.Model):
     name = db.Column(db.String(128), index=True)
     artist = db.Column(db.String(128), index=True)
     link = db.Column(db.String(256), index=True, unique=True)
+    pos_in_queue = db.Column(db.Integer, index=True)
 
     MAX_VOLUME = 50
 

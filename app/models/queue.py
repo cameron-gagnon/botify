@@ -32,8 +32,8 @@ class Queue:
         if len(self.queue) >= self.MAX_LEN:
             return self.ERR_FULL_QUEUE
 
-        success, response = self.too_many_requests(requester_info)
-        if not success:
+        too_many_requests, response = self.too_many_requests(requester_info)
+        if too_many_requests:
             return response
 
         success, song_request = self.searcher.search(song, requester_info['username'],
@@ -61,12 +61,12 @@ class Queue:
             if song.requester == requester_info['username']:
                 num_requests += 1
 
-        perm_limits = [('is_mod', 10), ('is_subscriber', 7), ('is_vip', 4), ('is_follower', 2)]
+        perm_limits = [('is_broadcaster', 50), ('is_mod', 10), ('is_subscriber', 5), ('is_follower', 5)]
         for permission, song_limit in perm_limits:
             if requester_info['userstatuses'][permission]:
-                return num_requests <= song_limit, "Too many songs on the queue for your permission level: {}.".format(permission)
+                return num_requests >= song_limit, "Too many songs on the queue for your permission level: {}.".format(permission[3:])
 
-        return True, "Follow to be able to request up to two songs!"
+        return True, "Follow to be able to request songs!"
 
     def remove_song(self, requester):
         for i, song in reversed(list(enumerate(self.queue))):
