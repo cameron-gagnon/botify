@@ -168,7 +168,10 @@ class Queue:
         if matched:
             volume_percent = cur_song.get_int_volume() + int(matched.group(0))
 
-        volume_percent = self._clamp(int(volume_percent), 0, max_volume)
+        if self._is_broadcaster(requester_info):
+            volume_percent = int(volume_percent)
+        else:
+            volume_percent = self._clamp(int(volume_percent), 0, max_volume)
 
         return cur_song.set_volume(volume_percent)
 
@@ -230,6 +233,9 @@ class Queue:
 
     def _is_mod_or_broadcaster(self, requester_info):
         return requester_info and requester_info['userstatuses']['is_mod'] or requester_info['username'] == 'stroopc'
+
+    def _is_broadcaster(self, requester_info):
+        return requester_info and requester_info['userstatuses']['is_broadcaster']
 
     def _check_and_start_playing(self):
         if len(self.queue) != 1 or not self.queue: return
