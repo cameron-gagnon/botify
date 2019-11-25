@@ -9,7 +9,7 @@ class SongRequest(db.Model):
     link = db.Column(db.String(256), index=True, unique=True)
     pos_in_queue = db.Column(db.Integer, index=True)
 
-    MAX_VOLUME = 75
+    MAX_VOLUME = 50
 
     def __init__(self, requester, player, *args):
         self.requester = requester
