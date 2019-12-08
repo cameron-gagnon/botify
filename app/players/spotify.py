@@ -12,7 +12,7 @@ class SpotifyPlayer(SpotifyBase):
         self.volume_percent = 35
 
     def play_default_playlist(self):
-        self.sp.shuffle(true, self.RANGER_DEVICE_ID)
+        self.sp.shuffle(True, self.RANGER_DEVICE_ID)
         self.play_track(context_uri=self.DEFAULT_PLAYLIST_TRACK)
 
     @handle_refresh
@@ -91,7 +91,5 @@ class SpotifyPlayer(SpotifyBase):
         artist_name = response['item']['artists'][0]['name']
         album_name = response['item']['album']['name']
         song_name = response['item']['name']
-        return "Currently playing: {song_name} by {artist_name} off of "\
-                "{album_name}. Here's the link! {link}".format(
-                        song_name=song_name, artist_name=artist_name,
-                        album_name=album_name, link=link)
+        return "Currently playing: {song_name} by {artist_name}. {link}".format(
+                    song_name=song_name, artist_name=artist_name, link=link)

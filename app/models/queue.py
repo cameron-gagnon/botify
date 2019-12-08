@@ -1,3 +1,4 @@
+import gevent
 import re
 import requests
 
@@ -25,6 +26,7 @@ class Queue:
         self.queue = []
         self.skippers = set()
         self.playback_info = {}
+        self.waiting_to_play_next_song = False
 
         self._fill_queue()
 
@@ -70,7 +72,7 @@ class Queue:
 
     def remove_song(self, requester):
         for i, song in reversed(list(enumerate(self.queue))):
-            if song.requester == requester:
+            if self._can_remove(song, requester):
                 if i == 0:
                     self._next_song()
 
@@ -120,6 +122,9 @@ class Queue:
 
         return self._next_song()
 
+    def _can_remove(self, song, requester):
+        return song.requester == requester or requester.lower() == 'stroopc'
+
     def _fill_queue(self):
         songs = SongRequest.query.all()
         for song in songs:
@@ -152,9 +157,12 @@ class Queue:
         del self.queue[0]
         return response
 
-    @check_queue_length
     def current_song(self):
-        return 'Currently Playing: ' + self.queue[0].info()
+        if len(self.queue):
+            cur_song_info = self.queue[0].info()
+        else:
+            cur_song_info = self.spotify_player.current_playback()
+        return 'Currently Playing: ' + cur_song_info
 
     @mods
     def set_volume(self, volume_percent, requester_info=None):
@@ -186,9 +194,6 @@ class Queue:
     @check_queue_length
     def _stop_playing(self):
         self.queue[0].pause()
-        # when the default playlist is playing, we want to pause it before
-        # playing the newly added song
-        self.spotify_player.pause_track()
 
         return 'Stopped the music :('
 
@@ -238,9 +243,36 @@ class Queue:
         return requester_info and requester_info['userstatuses']['is_broadcaster']
 
     def _check_and_start_playing(self):
+        # need to check if currently playing default playlist
         if len(self.queue) != 1 or not self.queue: return
-        self._stop_playing()
-        self._start_playing()
+
+        if not self.waiting_to_play_next_song:
+            self.waiting_to_play_next_song = True
+            gevent.spawn(self._play_queue_after_default_playlist)
+        else:
+            self._stop_playing()
+            self._start_playing()
+
+    """ NOTE: This function must set `self.waiting.to_play_next_song = False`
+              before returning
+    """
+    def _play_queue_after_default_playlist(self):
+        success, playback_info = self.spotify_player.request_playback_info()
+
+        # song is paused
+        if (success and not playback_info['is_playing']) or (not success):
+            self.waiting_to_play_next_song = False
+            return
+
+        prev_song = self.spotify_player.current_playback()
+        while True:
+            gevent.sleep(2)
+            cur_song = self.spotify_player.current_playback()
+            if prev_song != cur_song:
+                self.spotify_player.pause_track()
+                self._start_playing()
+                self.waiting_to_play_next_song = False
+                return
 
     def _add_to_queue(self, songRequest):
         self.queue.append(songRequest)

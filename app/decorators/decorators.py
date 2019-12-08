@@ -29,7 +29,6 @@ def handle_500(fn):
             return False, None
     return wrapper
 
-
 def check_queue_length(fn):
     def wrapper(*args, **kwargs):
         if len(args[0].queue) == 0:
