@@ -27,8 +27,10 @@ class Queue:
         self.playback_info = {}
 
         self._fill_queue()
+        app.logger.debug('Initialized queue: {}'.format(self.queue))
 
     def request_song(self, song, requester_info):
+        app.logger.debug('in request_song and the queue looks like this: {} '.format(self.queue))
         if len(self.queue) >= self.MAX_LEN:
             return self.ERR_FULL_QUEUE
 
@@ -53,6 +55,7 @@ class Queue:
             if song.name == song_request.name and \
                song.artist == song_request.artist:
                    return True
+        app.logger.debug('song: {} already on queue'.format(song_request))
         return False
 
     def too_many_requests(self, requester_info):
@@ -60,6 +63,8 @@ class Queue:
         for song in self.queue:
             if song.requester == requester_info['username']:
                 num_requests += 1
+
+        app.logger.debug('Too many requests for: {}'.format(requester_info))
 
         perm_limits = [('is_broadcaster', 50), ('is_mod', 10), ('is_subscriber', 5), ('is_follower', 5)]
         for permission, song_limit in perm_limits:
@@ -126,9 +131,11 @@ class Queue:
             self.queue.append(song_request_factory(song.song_type, song.requester,
                 song.name, song.artist, song.link,
                 song.song_type, callback=self._next_song))
+            app.logger.debug("Filling queue... Added: {}".format(song))
 
     def _rm_song_from_db(self, song_to_del):
         with app.app_context():
+            app.logger.debug('Removed {} from queue'.format(song_to_del))
             # this is run from within a thread and won't have access to the app
             # context unless this is given
             song = SongRequest.query.filter_by(link=song_to_del.link).first()
@@ -137,6 +144,7 @@ class Queue:
 
     def _song_done(self):
         ''' Should only be called once per SongRequest '''
+        app.logger.debug('Song finishing: {}'.format(self.queue[0]))
         self.queue[0].done()
 
         if len(self.queue) == 1:
@@ -149,6 +157,7 @@ class Queue:
 
         self._rm_song_from_db(self.queue[0])
 
+        app.logger.debug('Removing song: {} from the queue'.format(self.queue[0]))
         del self.queue[0]
         return response
 
@@ -185,6 +194,7 @@ class Queue:
 
     @check_queue_length
     def _stop_playing(self):
+        app.logger.debug('Stopping playing: {}'.format(self.queue[0]))
         self.queue[0].pause()
         # when the default playlist is playing, we want to pause it before
         # playing the newly added song
@@ -198,7 +208,10 @@ class Queue:
 
     @check_queue_length
     def _start_playing(self, sr=None, requester_info=None):
-        if not sr: sr = self.queue[0]
+        if not sr:
+            app.logger.debug('Initializing sr with: {}'.format(self.queue[0]))
+            sr = self.queue[0]
+
         sr.play()
         return 'Playing the thicc beatz'
 
@@ -216,7 +229,7 @@ class Queue:
             return False, "Give a valid integer"
 
         if num < 1 or num > len(self.queue):
-            return False, "Please give a number between 1 and {}".format(len(self.queue))
+            return False, 'Please give a number between 1 and {}'.format(len(self.queue))
         return True, num
 
     def _clamp(self, n, minn, maxn):
@@ -238,15 +251,18 @@ class Queue:
         return requester_info and requester_info['userstatuses']['is_broadcaster']
 
     def _check_and_start_playing(self):
-        if len(self.queue) != 1 or not self.queue: return
+        if len(self.queue) != 1 or not self.queue:
+            app.logger.debug('checked to start playing and got no queue: {}'.format(self.queue))
+            return
         self._stop_playing()
         self._start_playing()
 
-    def _add_to_queue(self, songRequest):
-        self.queue.append(songRequest)
+    def _add_to_queue(self, song_request):
+        app.logger.debug('_adding_to_queue: {}'.format(song_request))
+        self.queue.append(song_request)
 
-        db.session.add(songRequest)
+        db.session.add(song_request)
         db.session.commit()
-        return "Added {} to position number #{}".format(
-                songRequest.info(), len(self.queue))
+        return 'Added {} to position number #{}'.format(
+                song_request.info(), len(self.queue))
 

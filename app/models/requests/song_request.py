@@ -45,3 +45,11 @@ class SongRequest(db.Model):
 
     def max_volume(self):
         return self.MAX_VOLUME
+
+    def __str__(self):
+        return '%(name)s by %(artist)s %(link)s requested by %(requester)s' % {
+            'name': self.name,
+            'artist': self.artist,
+            'link': self.link,
+            'requester': self.requester,
+        }

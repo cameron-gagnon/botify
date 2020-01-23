@@ -7,6 +7,8 @@ from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
+import logging
+
 from app.configs.database import Config
 
 db = SQLAlchemy()
@@ -15,7 +17,11 @@ migrate = Migrate()
 def create_app(config_class=Config):
     app = Flask(__name__)
 
+    logging.basicConfig(filename='debug.log', level=logging.DEBUG,
+                        format=("%(asctime)s %(levelname)s %(name)s"
+                                "%(threadName)s : %(message)s"))
     app.config.from_object(config_class)
+
     db.init_app(app)
     migrate.init_app(app, db)
 
