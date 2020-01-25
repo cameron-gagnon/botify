@@ -4,3 +4,4 @@ venv/
 config.yml
 queue.db
 *.log
+.cache*
