@@ -1,6 +1,8 @@
 [Unit]
-Description=Botify (Twitch song request bot)
-After=network.target
+Description=Song request website that receives !sr from stroopc's chatbot
+
+[Install]
+WantedBy=multi-user.target
 
 [Service]
 User=stroop
@@ -9,6 +11,3 @@ WorkingDirectory=/home/stroop/src/botify
 ExecStart=/home/stroop/src/botify/run.sh
 Restart=always
 RestartSec=3
-
-[Install]
-WantedBy=multi-user.target

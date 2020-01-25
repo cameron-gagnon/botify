@@ -39,3 +39,8 @@ Done:
 * add init scripts for botify and chatbot on mote
 * socket io error working outside of application context
 * Check if a user is VIP or Mod and allow them to put more songs on the queue
+
+## Notes on how to migrate the db
+FLASK_APP=main.py flask db init # one time thing
+FLASK_APP=main.py flask db migrate
+FLASK_APP=main.py flask db upgrade
