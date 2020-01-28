@@ -21,5 +21,5 @@ class YouTubeRequest(SongRequest):
         return self.player.get_volume()
 
     def done(self):
-        self.done = True
+        self.song_done = True
         self.player.done()
