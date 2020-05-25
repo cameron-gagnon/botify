@@ -40,8 +40,8 @@ def check_queue_length(fn):
 
 def mods(fn):
     def wrapper(*args, **kwargs):
-        if not args[0]._is_mod_or_broadcaster(kwargs['requester_info']):
-            return "Sorry, only mods can perform this action"
+        if not args[0]._is_dj(kwargs['requester_info']):
+            return "Sorry, only DJs can perform this action"
 
         return fn(*args, **kwargs)
     return wrapper

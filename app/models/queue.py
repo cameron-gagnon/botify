@@ -66,7 +66,7 @@ class Queue:
 
         app.logger.debug('Too many requests for: {}'.format(requester_info))
 
-        perm_limits = [('is_broadcaster', 50), ('is_mod', 10), ('is_subscriber', 5), ('is_follower', 5)]
+        perm_limits = [('is_broadcaster', 50), ('is_mod', 10), ('is_subscriber', 5), ('is_vip', 5), ('is_follower', 5)]
         for permission, song_limit in perm_limits:
             if requester_info['userstatuses'][permission]:
                 return num_requests >= song_limit, "Too many songs on the queue for your permission level: {}.".format(permission[3:])
@@ -236,7 +236,7 @@ class Queue:
         return max(min(maxn, n), minn)
 
     def _should_skip(self, requester_info):
-        if self._is_mod_or_broadcaster(requester_info):
+        if self._is_dj(requester_info):
             return True
 
         self.skippers.add(requester_info['username'])
@@ -244,8 +244,10 @@ class Queue:
             return True
         return False
 
-    def _is_mod_or_broadcaster(self, requester_info):
-        return requester_info and requester_info['userstatuses']['is_mod'] or requester_info['username'] == 'stroopc'
+    def _is_dj(self, requester_info):
+        return requester_info and (requester_info['userstatuses']['is_mod']
+                or requester_info['username'] == 'stroopc'
+                or requester_info['userstatuses']['is_vip'])
 
     def _is_broadcaster(self, requester_info):
         return requester_info and requester_info['userstatuses']['is_broadcaster']
