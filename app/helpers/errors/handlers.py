@@ -1,7 +1,7 @@
 import app
 
 import traceback
-from app.errors import bp as error_bp
+from app.helpers.errors import bp as error_bp
 
 # handles all errors
 @error_bp.app_errorhandler(Exception)

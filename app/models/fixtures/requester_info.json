@@ -1,0 +1,13 @@
+{
+    'stroopc': {
+        'username': 'stroopc',
+        'userstatuses': {
+            'is_mod': False,
+            'is_subscriber': True,
+            'is_vip': False,
+            'is_follower': False,
+            'is_broadcaster': True
+        }
+    }
+
+}

@@ -1,10 +1,10 @@
 import re
 import requests
 
-from app.decorators.decorators import handle_infinite_loop, check_queue_length, mods
+from app.helpers.decorators.decorators import handle_infinite_loop, check_queue_length, mods
 from app.helpers.searcher import Searcher
 from app.helpers.song_request_factory import song_request_factory
-from app.models.requests.song_request import SongRequest
+from app.models.song_requests.song_request import SongRequest
 from app import db
 from main import app
 

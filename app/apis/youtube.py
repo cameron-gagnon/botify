@@ -9,7 +9,7 @@ import yaml
 import googleapiclient.discovery
 import googleapiclient.errors
 
-from app.helpers.config import Config
+from app.helpers.configs.config import Config
 
 
 class YouTubeAPI(Config):

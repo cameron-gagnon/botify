@@ -1,7 +1,7 @@
 import threading
 import time
 
-from app.models.requests.song_request import SongRequest
+from app.models.song_requests.song_request import SongRequest
 
 class YouTubeRequest(SongRequest):
     def __init__(self, requester, player, *args):

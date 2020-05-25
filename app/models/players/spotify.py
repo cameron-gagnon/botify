@@ -1,8 +1,8 @@
 import re
 
-from app.helpers.spotify_base import SpotifyBase
-from app.decorators.decorators import handle_refresh, handle_500
-from app.decorators.singleton import Singleton
+from app.models.players.spotify_base import SpotifyBase
+from app.helpers.decorators.decorators import handle_refresh, handle_500
+from app.helpers.decorators.singleton import Singleton
 
 @Singleton
 class SpotifyPlayer(SpotifyBase):
@@ -11,6 +11,7 @@ class SpotifyPlayer(SpotifyBase):
         super().__init__()
         self.volume_percent = 35
 
+    @handle_refresh
     def play_default_playlist(self):
         self.sp.shuffle(True, self.RANGER_DEVICE_ID)
         self.play_track(context_uri=self.DEFAULT_PLAYLIST_TRACK)

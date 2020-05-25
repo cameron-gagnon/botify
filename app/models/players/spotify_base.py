@@ -1,7 +1,8 @@
 import spotipy
 import spotipy.util as util
 
-from app.helpers.config import Config
+from app.helpers.configs.config import Config
+from main import app
 
 class SpotifyBase(Config):
     RANGER_DEVICE_ID = '8a3c4ae699cdd7775c263a6993a5ddf78e20cc10'
@@ -18,6 +19,7 @@ class SpotifyBase(Config):
                 client_secret=self.config['client_secret'],
                 redirect_uri=self.config['redirect_uri'])
         if not self.token:
+            app.logger.error("Unable to get Spotify auth token!")
             raise Exception("Unable to get auth token!")
         self.sp = spotipy.Spotify(auth=self.token)
         self.sp.trace = False

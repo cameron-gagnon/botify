@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from app import create_app, db
-from app.models.requests.song_request import SongRequest
+from app.models.song_requests.song_request import SongRequest
 
 app, socketio = create_app()
 

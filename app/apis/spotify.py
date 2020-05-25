@@ -1,8 +1,8 @@
 from pprint import pprint
 import sys
 
-from app.helpers.spotify_base import SpotifyBase
-from app.decorators.decorators import handle_500, handle_refresh
+from app.models.players.spotify_base import SpotifyBase
+from app.helpers.decorators.decorators import handle_500, handle_refresh
 
 class SpotifyAPI(SpotifyBase):
 

@@ -1,7 +1,7 @@
 from app.apis.spotify import SpotifyAPI
 from app.apis.youtube import YouTubeAPI
 from app.helpers.song_request_factory import song_request_factory
-from app.models.requests.song_types import SongType
+from app.models.song_requests.song_types import SongType
 
 class Searcher:
 

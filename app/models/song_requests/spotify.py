@@ -3,7 +3,7 @@ import time
 
 from flask_socketio import emit
 
-from app.models.requests.song_request import SongRequest
+from app.models.song_requests.song_request import SongRequest
 
 class SpotifyRequest(SongRequest):
 

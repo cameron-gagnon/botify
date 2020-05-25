@@ -4,8 +4,8 @@ from flask import request, render_template
 
 from app.models.queue import Queue
 from app.helpers.searcher import Searcher
-from app.players.spotify import SpotifyPlayer
-from app.apis.queue import bp as queue_bp
+from app.models.players.spotify import SpotifyPlayer
+from app.controllers import bp as queue_bp
 
 song_queue = Queue(Searcher(), SpotifyPlayer.instance())
 

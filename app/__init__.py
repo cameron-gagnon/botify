@@ -9,7 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 import logging
 
-from app.configs.database import Config
+from app.helpers.configs.database import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -29,10 +29,10 @@ def create_app(config_class=Config):
     # Queue needs the app context to be filled on __init__
     with app.app_context():
         db.create_all()
-        from app.apis.queue import bp as queue_bp
+        from app.controllers import bp as queue_bp
 
-    from app.errors import bp as errors_bp
-    from app.players.youtube import YouTubePlayer
+    from app.helpers.errors import bp as errors_bp
+    from app.models.players.youtube import YouTubePlayer
 
     app.register_blueprint(queue_bp)
     app.register_blueprint(errors_bp)

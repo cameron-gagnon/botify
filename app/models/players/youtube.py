@@ -1,7 +1,7 @@
 import time
 
-from app.decorators.singleton import Singleton
-from app.sockets.youtube import YouTubeSockets
+from app.helpers.decorators.singleton import Singleton
+from app.models.sockets.youtube import YouTubeSockets
 from flask_socketio import Namespace, emit
 
 @Singleton
