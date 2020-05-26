@@ -1,8 +1,10 @@
 import re
+import random
 
 from app.models.players.spotify_base import SpotifyBase
-from app.helpers.decorators.decorators import handle_refresh, handle_500
+from app.helpers.decorators.decorators import handle_refresh
 from app.helpers.decorators.singleton import Singleton
+from main import app
 
 @Singleton
 class SpotifyPlayer(SpotifyBase):
@@ -10,11 +12,25 @@ class SpotifyPlayer(SpotifyBase):
     def __init__(self):
         super().__init__()
         self.volume_percent = 35
+        playlist_info = self.sp.user_playlist_tracks(self.config['user_id'],
+                                             self.DEFAULT_PLAYLIST_TRACK,
+                                             offset=1, limit=1)
+        self.default_playlist_length = playlist_info['total']
 
     @handle_refresh
     def play_default_playlist(self):
         self.sp.shuffle(True, self.RANGER_DEVICE_ID)
         self.play_track(context_uri=self.DEFAULT_PLAYLIST_TRACK)
+
+    @handle_refresh
+    def random_track_from_default_playlist(self):
+        random_int = random.randint(0, self.default_playlist_length)
+        track_info = self.sp.user_playlist_tracks(self.config['user_id'],
+                                             self.DEFAULT_PLAYLIST_TRACK,
+                                             offset=random_int, limit=1)
+        print("GOT TRACK", track_info)
+        track = track_info['items'][0]['track']
+        return self._song_info_from_track(track)
 
     @handle_refresh
     def get_volume(self):
@@ -31,12 +47,8 @@ class SpotifyPlayer(SpotifyBase):
         return "Volume set to {}".format(volume_percent)
 
     @handle_refresh
-    def current_playback(self):
-        return self._currently_playing(self.sp.current_playback(market='US'))
-
-    @handle_500
     def request_playback_info(self):
-        return self._current_song_name(self.sp.current_playback(market='US'))
+        return self._song_info_from_currently_playing(self.sp.current_playback(market='US'))
 
     @handle_refresh
     def next_track(self):
@@ -44,10 +56,11 @@ class SpotifyPlayer(SpotifyBase):
 
     @handle_refresh
     def pause_track(self):
-        success, response = self.request_playback_info()
-        if not success or not response:
-            print("PAUSE TRACK: response=", response)
+        response = self.request_playback_info()
+        if not response:
+            app.logger.error("pause_track's response is empty")
             return
+
         if response['is_playing']:
             self.sp.pause_playback(device_id=self.RANGER_DEVICE_ID)
 
@@ -74,25 +87,3 @@ class SpotifyPlayer(SpotifyBase):
         if response['device']['name'] != 'RANGER':
             return 0
         return response['device']['volume_percent']
-
-    def _current_song_name(self, response):
-        #pprint(response)
-        res = {}
-        if not response:
-            return res
-
-        res['name'] = response['item']['name']
-        res['artist'] = response['item']['artists'][0]['name']
-        res['is_playing'] = response['is_playing']
-        res['progress_ms'] = response['progress_ms']
-        return res
-
-    def _currently_playing(self, response):
-        link = response['item']['external_urls']['spotify']
-        artist_name = response['item']['artists'][0]['name']
-        album_name = response['item']['album']['name']
-        song_name = response['item']['name']
-        return "Currently playing: {song_name} by {artist_name} off of "\
-                "{album_name}. Here's the link! {link}".format(
-                        song_name=song_name, artist_name=artist_name,
-                        album_name=album_name, link=link)

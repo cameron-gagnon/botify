@@ -31,7 +31,7 @@ class Searcher:
 
         song_request = song_request_factory(song_type, requester,
                 response['name'], response['artist'], response['song_uri'],
-                song_type, callback=callback)
+                callback=callback)
         return True, song_request
 
     def _is_youtube_link(self, link):

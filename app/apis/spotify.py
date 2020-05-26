@@ -2,7 +2,7 @@ from pprint import pprint
 import sys
 
 from app.models.players.spotify_base import SpotifyBase
-from app.helpers.decorators.decorators import handle_500, handle_refresh
+from app.helpers.decorators.decorators import handle_refresh
 
 class SpotifyAPI(SpotifyBase):
 
@@ -19,9 +19,7 @@ class SpotifyAPI(SpotifyBase):
             response['error'] = "Error: {} could not be found".format(song)
             return False, response
 
-        response['song_uri'] = search_res['tracks']['items'][0]['external_urls']['spotify']
-        response['artist'] = search_res['tracks']['items'][0]['artists'][0]['name']
-        response['name'] = search_res['tracks']['items'][0]['name']
+        response = self._song_info_from_search(search_res)
         return True, response
 
     @handle_refresh
@@ -53,10 +51,8 @@ class SpotifyAPI(SpotifyBase):
                 self.config['playlist'], [song_uri])
         return message
 
-
     def devices(self):
         print(self.sp.devices())
-
 
     def _is_uri(self, song):
         return 'spotify:track:' in song

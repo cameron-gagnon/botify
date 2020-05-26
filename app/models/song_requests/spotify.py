@@ -7,8 +7,8 @@ from app.models.song_requests.song_request import SongRequest
 
 class SpotifyRequest(SongRequest):
 
-    def __init__(self, requester, player, *args, callback=None):
-        super().__init__(requester, player, *args)
+    def __init__(self, requester, player, song_type, *args, callback=None):
+        super().__init__(requester, player, song_type, *args)
         self.playback_info = None
         self.thread_started = False
         self.callback = callback
@@ -38,10 +38,17 @@ class SpotifyRequest(SongRequest):
             if self.song_done:
                 return
 
-            success, self.playback_info = self.player.request_playback_info()
-            print("request_player info:", success, self.playback_info)
-            if not success:
-                continue
+            self.playback_info = self.player.request_playback_info()
+            print("request_player info:", self.playback_info)
+
+            # sometimes it seems when spotify finishes playing a song, if it
+            # isn't on autoplay and isn't told to play a new song it will
+            # immediately start returning no information for current playback
+            # we assume we're not erroring out and instead spotify is just done
+            # playing
+            if not self.playback_info:
+                self.callback()
+                return
 
             if self.playback_info \
                 and self.playback_info['progress_ms'] == 0 \

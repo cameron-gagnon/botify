@@ -6,10 +6,10 @@ from app.models.song_requests.youtube import YouTubeRequest
 
 def song_request_factory(song_type, requester, *args, callback=None):
     if song_type == SongType.Spotify:
-        return SpotifyRequest(requester, SpotifyPlayer.instance(), *args,
+        return SpotifyRequest(requester, SpotifyPlayer.instance(), song_type, *args,
                 callback=callback)
     elif song_type == SongType.YouTube:
         YouTubePlayer.instance().set_callback(callback)
-        return YouTubeRequest(requester, YouTubePlayer.instance(), *args)
+        return YouTubeRequest(requester, YouTubePlayer.instance(), song_type, *args)
     else:
         raise 'Invalid SongRequest type Specified. Please give either YouTube or Spotify song request types'

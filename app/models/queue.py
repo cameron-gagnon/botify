@@ -5,6 +5,7 @@ from app.helpers.decorators.decorators import handle_infinite_loop, check_queue_
 from app.helpers.searcher import Searcher
 from app.helpers.song_request_factory import song_request_factory
 from app.models.song_requests.song_request import SongRequest
+from app.models.song_requests.song_types import SongType
 from app import db
 from main import app
 
@@ -125,41 +126,14 @@ class Queue:
 
         return self._next_song()
 
-    def _fill_queue(self):
-        songs = SongRequest.query.all()
-        for song in songs:
-            self.queue.append(song_request_factory(song.song_type, song.requester,
-                song.name, song.artist, song.link,
-                song.song_type, callback=self._next_song))
-            app.logger.debug("Filling queue... Added: {}".format(song))
-
-    def _rm_song_from_db(self, song_to_del):
-        with app.app_context():
-            app.logger.debug('Removed {} from queue'.format(song_to_del))
-            # this is run from within a thread and won't have access to the app
-            # context unless this is given
-            song = SongRequest.query.filter_by(link=song_to_del.link).first()
-            db.session.delete(song)
-            db.session.commit()
-
-    def _song_done(self):
-        ''' Should only be called once per SongRequest '''
-        app.logger.debug('Song finishing: {}'.format(self.queue[0]))
-        self.queue[0].done()
-
-        if len(self.queue) == 1:
-            response = self.NO_SONGS_IN_QUEUE
-            self.spotify_player.play_default_playlist()
-        else:
-            self._start_playing(self.queue[1])
-            self.skippers = set()
-            response = self.queue[1].info()
-
-        self._rm_song_from_db(self.queue[0])
-
-        app.logger.debug('Removing song: {} from the queue'.format(self.queue[0]))
-        del self.queue[0]
-        return response
+    def add_song_from_default_playlist(self):
+        track = self.spotify_player.random_track_from_default_playlist()
+        song_request = song_request_factory(SongType.Spotify, 'stroopc',
+                                            track['name'], track['artist'],
+                                            track['song_uri'],
+                                            callback=self._next_song)
+        app.logger.debug('Adding track from default playlist: {}'.format(song_request))
+        self._add_to_queue(song_request)
 
     @check_queue_length
     def current_song(self):
@@ -192,19 +166,16 @@ class Queue:
     def stop_playing(self, requester_info=None):
         return self._stop_playing()
 
+    @mods
+    def start_playing(self, sr=None, requester_info=None):
+        return self._start_playing(sr=sr, requester_info=requester_info)
+
     @check_queue_length
     def _stop_playing(self):
         app.logger.debug('Stopping playing: {}'.format(self.queue[0]))
         self.queue[0].pause()
-        # when the default playlist is playing, we want to pause it before
-        # playing the newly added song
-        self.spotify_player.pause_track()
 
         return 'Stopped the music :('
-
-    @mods
-    def start_playing(self, sr=None, requester_info=None):
-        return self._start_playing(sr=sr, requester_info=requester_info)
 
     @check_queue_length
     def _start_playing(self, sr=None, requester_info=None):
@@ -219,6 +190,44 @@ class Queue:
     def _next_song(self):
         self._stop_playing()
         return self._song_done()
+
+    def _fill_queue(self):
+        songs = SongRequest.query.all()
+        for song in songs:
+            self.queue.append(song_request_factory(song.song_type, song.requester,
+                song.name, song.artist, song.link, callback=self._next_song))
+            app.logger.debug("Filling queue... Added: {}".format(song))
+
+    def _rm_song_from_db(self, song_to_del):
+        with app.app_context():
+            app.logger.debug('Removing {} from queue'.format(song_to_del))
+            # this is run from within a thread and won't have access to the app
+            # context unless this is given
+            song = SongRequest.query.filter_by(link=song_to_del.link).first()
+
+            # # songs that are added from the default playlist aren't actually
+            # # added to the db since they aren't added/_ad
+            # if song:
+            db.session.delete(song)
+            db.session.commit()
+
+    def _song_done(self):
+        ''' Should only be called once per SongRequest '''
+        app.logger.debug('Song finishing: {}'.format(self.queue[0]))
+        self.queue[0].done()
+
+        if len(self.queue) == 1:
+            self.add_song_from_default_playlist()
+
+        self._start_playing(self.queue[1])
+        self.skippers = set()
+        response = self.queue[1].info()
+
+        self._rm_song_from_db(self.queue[0])
+
+        app.logger.debug('Removing song: {} from the queue'.format(self.queue[0]))
+        del self.queue[0]
+        return response
 
     def _validate_int(self, num):
         if not self.queue:
@@ -260,11 +269,12 @@ class Queue:
         self._start_playing()
 
     def _add_to_queue(self, song_request):
-        app.logger.debug('_adding_to_queue: {}'.format(song_request))
-        self.queue.append(song_request)
+        with app.app_context():
+            app.logger.debug('_adding_to_queue: {}'.format(song_request))
+            self.queue.append(song_request)
 
-        db.session.add(song_request)
-        db.session.commit()
-        return 'Added {} to position number #{}'.format(
-                song_request.info(), len(self.queue))
+            db.session.add(song_request)
+            db.session.commit()
+            return 'Added {} to position number #{}'.format(
+                    song_request.info(), len(self.queue))
 

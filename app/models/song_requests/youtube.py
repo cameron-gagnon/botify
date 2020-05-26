@@ -4,8 +4,8 @@ import time
 from app.models.song_requests.song_request import SongRequest
 
 class YouTubeRequest(SongRequest):
-    def __init__(self, requester, player, *args):
-        super().__init__(requester, player, *args)
+    def __init__(self, requester, player, song_type, *args):
+        super().__init__(requester, player, song_type, *args)
         self.MAX_VOLUME = 35
 
     def play(self):

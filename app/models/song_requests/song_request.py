@@ -11,13 +11,13 @@ class SongRequest(db.Model):
 
     MAX_VOLUME = 50
 
-    def __init__(self, requester, player, *args):
+    def __init__(self, requester, player, song_type, *args):
         self.requester = requester
         self.player = player
+        self.song_type = song_type
         self.name = args[0]
         self.artist = args[1]
         self.link = args[2]
-        self.song_type = args[3]
 
         self.song_done = False
 

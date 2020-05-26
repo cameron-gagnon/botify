@@ -23,3 +23,26 @@ class SpotifyBase(Config):
             raise Exception("Unable to get auth token!")
         self.sp = spotipy.Spotify(auth=self.token)
         self.sp.trace = False
+
+    def _song_info_from_search(self, result):
+        track = result['tracks']['items'][0]
+        return self._song_info_from_track(track)
+
+    def _song_info_from_currently_playing(self, response):
+        if not response:
+            return {}
+
+        res = self._song_info_from_track(response['item'])
+        res['is_playing'] = response['is_playing']
+        res['progress_ms'] = response['progress_ms']
+        return res
+
+    def _song_info_from_track(self, track):
+        if not track:
+            return {}
+
+        response = {}
+        response['song_uri'] = track['external_urls']['spotify']
+        response['artist'] = track['artists'][0]['name']
+        response['name'] = track['name']
+        return response
