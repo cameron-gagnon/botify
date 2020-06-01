@@ -28,7 +28,6 @@ class SpotifyPlayer(SpotifyBase):
         track_info = self.sp.user_playlist_tracks(self.config['user_id'],
                                              self.DEFAULT_PLAYLIST_TRACK,
                                              offset=random_int, limit=1)
-        print("GOT TRACK", track_info)
         track = track_info['items'][0]['track']
         return self._song_info_from_track(track)
 

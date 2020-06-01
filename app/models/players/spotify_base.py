@@ -6,7 +6,7 @@ from main import app
 
 class SpotifyBase(Config):
     RANGER_DEVICE_ID = '8a3c4ae699cdd7775c263a6993a5ddf78e20cc10'
-    DEFAULT_PLAYLIST_TRACK = "spotify:playlist:7ekRyn6gOaqR6P0GS24uZ5"
+    DEFAULT_PLAYLIST_TRACK = 'spotify:playlist:7ekRyn6gOaqR6P0GS24uZ5'
 
     def __init__(self):
         super().__init__('spotify')
@@ -19,8 +19,8 @@ class SpotifyBase(Config):
                 client_secret=self.config['client_secret'],
                 redirect_uri=self.config['redirect_uri'])
         if not self.token:
-            app.logger.error("Unable to get Spotify auth token!")
-            raise Exception("Unable to get auth token!")
+            app.logger.error('Unable to get Spotify auth token!')
+            raise Exception('Unable to get auth token!')
         self.sp = spotipy.Spotify(auth=self.token)
         self.sp.trace = False
 
@@ -39,7 +39,8 @@ class SpotifyBase(Config):
 
     def _song_info_from_track(self, track):
         if not track:
-            return {}
+            app.logger.error('Asked for track info, but got no track!')
+            raise Exception('No track info provided when formatting info from track')
 
         response = {}
         response['song_uri'] = track['external_urls']['spotify']
