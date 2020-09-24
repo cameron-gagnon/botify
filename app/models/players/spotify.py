@@ -9,6 +9,8 @@ from main import app
 @Singleton
 class SpotifyPlayer(SpotifyBase):
 
+    TMP_PLAYLIST = 'spotify:playlist:7IaqpuGOD8ypXoSRKnZ865'
+
     def __init__(self):
         super().__init__()
         self.volume_percent = 35
@@ -30,6 +32,11 @@ class SpotifyPlayer(SpotifyBase):
                                              offset=random_int, limit=1)
         track = track_info['items'][0]['track']
         return self._song_info_from_track(track)
+
+    @handle_refresh
+    def modify_playlist(self, playlist_id, song_uri):
+        res = self.sp.playlist_replace_items(playlist_id, [song_uri])
+        print(f"result from adding (or clearing) {playlist_id}: {res}")
 
     @handle_refresh
     def get_volume(self):
@@ -64,13 +71,13 @@ class SpotifyPlayer(SpotifyBase):
             self.sp.pause_playback(device_id=self.RANGER_DEVICE_ID)
 
     @handle_refresh
-    def play_track(self, uri=None, position_ms = 0, context_uri=None):
+    def play_track(self, uri=None, position_ms=0, context_uri=None):
         if uri:
             uri = [uri]
 
         print("Playing track", uri, position_ms)
         self.sp.start_playback(device_id=self.RANGER_DEVICE_ID,
-                position_ms = position_ms, uris=uri, context_uri=context_uri)
+                position_ms= position_ms, uris=uri, context_uri=context_uri)
 
     @handle_refresh
     def seek_track(self, postition_ms):
