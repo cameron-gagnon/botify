@@ -1,8 +1,8 @@
 from app.models.players.spotify import SpotifyPlayer
 from app.models.players.youtube import YouTubePlayer
 from app.models.song_requests.song_types import SongType
-from app.models.song_requests.spotify import SpotifyRequest
-from app.models.song_requests.youtube import YouTubeRequest
+from app.models.song_requests.spotify_request import SpotifyRequest
+from app.models.song_requests.youtube_request import YouTubeRequest
 
 def song_request_factory(song_type, requester, *args, callback=None):
     if song_type == SongType.Spotify:

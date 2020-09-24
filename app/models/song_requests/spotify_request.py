@@ -18,10 +18,23 @@ class SpotifyRequest(SongRequest):
             self.thread_started = True
             gevent.spawn(self._song_done)
 
+        self.start_playback()
+
+    def start_playback(self):
+        at_ms = self.resume_playback_at()
+        self.player.modify_playlist(self.player.TMP_PLAYLIST, self.link)
+        self.play_tmp_playlist(at_ms)
+
+    def resume_playback_at(self):
         ms = 0
         if self.playback_info and self.playback_info['progress_ms']:
             ms = self.playback_info['progress_ms']
-        self.player.play_track(self.link, position_ms=ms)
+        return ms
+
+    def play_tmp_playlist(self, position_ms):
+        print(f"Playing song: {self.link} starting at {position_ms}ms in.")
+        self.player.play_track(context_uri=self.player.TMP_PLAYLIST,
+                               position_ms=position_ms)
 
     def pause(self):
         self.player.pause_track()
@@ -46,14 +59,14 @@ class SpotifyRequest(SongRequest):
             # immediately start returning no information for current playback
             # we assume we're not erroring out and instead spotify is just done
             # playing
-            if not self.playback_info:
-                self.callback()
-                return
+            # if not self.playback_info:
+            #     self.callback()
+            #     return
 
+            # and self.playback_info['progress_ms'] == 0 \
+            # and not self.playback_info['is_playing'] \
             if self.playback_info \
-                and self.playback_info['progress_ms'] == 0 \
-                and not self.playback_info['is_playing'] \
-                and self.playback_info['name'] == self.name:
+                and self.playback_info['name'] != self.name:
                 print("Executing callback")
                 self.callback()
                 return
