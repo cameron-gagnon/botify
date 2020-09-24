@@ -1,6 +1,3 @@
-from pprint import pprint
-import sys
-
 from app.models.players.spotify_base import SpotifyBase
 from app.helpers.decorators.decorators import handle_refresh
 
@@ -26,45 +23,3 @@ class SpotifyAPI(SpotifyBase):
 
             response = self._song_info_from_search(search_res)
         return True, response
-
-    @handle_refresh
-    def request_song(self, song):
-        ''' Supports URL and search term queries NOT URI queries'''
-        song_uri = song_name = artist = None
-
-        success, response = self.search(song)
-        if not success:
-            return response['error']
-
-        self._add_song_to_playlist(response['song_uri'])
-        return "{song_name} by {artist} was added to the playlist".format(
-                song_name=response['song_name'], artist=response['artist'])
-
-    @handle_refresh
-    def remove_song(self, song_or_uri):
-        message = "Removed {song_or_uri} from playlist".format(song_or_uri=song_or_uri)
-        if not self._is_uri(song_or_uri):
-            success, response = self.search(song_or_uri)
-            if not success:
-                return response['error']
-            message = "Removed {song_name} by {artist} from the playlist".format(
-                        song_name=response['song_name'],
-                        artist=response['artist'])
-            song_uri = response['song_uri']
-
-        self.sp.user_playlist_remove_all_occurrences_of_tracks(self.config['username'],
-                self.config['playlist'], [song_uri])
-        return message
-
-    def devices(self):
-        print(self.sp.devices())
-
-    def _is_uri(self, song):
-        return 'spotify:track:' in song
-
-    def _add_song_to_playlist(self, song_uri):
-        res = self.sp.user_playlist_add_tracks(
-                self.config['username'],
-                self.config['playlist'],
-                tracks=[song_uri])
-        print("Song added!", res)
