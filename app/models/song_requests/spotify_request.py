@@ -14,16 +14,19 @@ class SpotifyRequest(SongRequest):
         self.callback = callback
 
     def play(self):
+        self.start_tracking_playback()
+        self.start_playback()
+
+    def start_tracking_playback(self):
         if not self.thread_started:
             self.thread_started = True
             gevent.spawn(self._song_done)
 
-        self.start_playback()
-
     def start_playback(self):
         at_ms = self.resume_playback_at()
-        self.player.modify_playlist(self.player.TMP_PLAYLIST, self.link)
-        self.play_tmp_playlist(at_ms)
+        if not self.is_playing():
+            self.player.modify_playlist(self.player.TMP_PLAYLIST, self.link)
+            self.play_tmp_playlist(at_ms)
 
     def resume_playback_at(self):
         ms = 0
@@ -45,9 +48,13 @@ class SpotifyRequest(SongRequest):
     def get_volume(self):
         return self.player.get_volume()
 
+
+    def is_playing(self):
+        return self.playback_info and self.playback_info['is_playing']
+
     def _song_done(self):
         while True:
-            gevent.sleep(5)
+            gevent.sleep(0.5)
             if self.song_done:
                 return
 

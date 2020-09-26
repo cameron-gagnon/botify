@@ -25,11 +25,10 @@ class SpotifyPlayer(SpotifyBase):
         self.play_track(context_uri=self.DEFAULT_PLAYLIST_TRACK)
 
     @handle_refresh
-    def random_track_from_default_playlist(self):
+    def random_track_from_playlist(self, playlid_uid=SpotifyBase.DEFAULT_PLAYLIST_TRACK):
         random_int = random.randint(0, self.default_playlist_length)
         track_info = self.sp.user_playlist_tracks(self.config['user_id'],
-                                             self.DEFAULT_PLAYLIST_TRACK,
-                                             offset=random_int, limit=1)
+                            playlid_uid, offset=random_int, limit=1)
         track = track_info['items'][0]['track']
         return self._song_info_from_track(track)
 
@@ -54,7 +53,7 @@ class SpotifyPlayer(SpotifyBase):
 
     @handle_refresh
     def request_playback_info(self):
-        return self._song_info_from_currently_playing(self.sp.current_playback(market='US'))
+        return self._song_info_from_spotify_response(self.sp.current_playback(market='US'))
 
     @handle_refresh
     def next_track(self):

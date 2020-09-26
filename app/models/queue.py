@@ -14,6 +14,7 @@ class Queue:
     NO_SONGS_IN_QUEUE = 'No songs in the queue. Add one with !sr'
     MAX_LEN = 20
     MAX_SONG_REQS_PER_PERSON = 3
+    ONE_SONG = 1
     VOL_REGEX = '[\+|-]\d{1,3}'
     ERR_TOO_LOUD = "Please don't make me go deaf while I play games :( Give a value between 0 and {} inclusive"
     ERR_INVALID_VOL = "Please enter a valid number between 0 and {}, inclusive"
@@ -47,8 +48,7 @@ class Queue:
         if self.song_already_on_queue(song_request):
             return self.ERR_SONG_ALREADY_EXISTS
 
-        response = self._add_to_queue(song_request)
-        self._check_and_start_playing()
+        response = self._check_and_start_playing(song_request)
         return response
 
     def song_already_on_queue(self, song_request):
@@ -67,7 +67,7 @@ class Queue:
 
         app.logger.debug('Too many requests for: {}'.format(requester_info))
 
-        perm_limits = [('is_broadcaster', 50), ('is_mod', 10), ('is_subscriber', 5), ('is_vip', 5), ('is_follower', 5)]
+        perm_limits = [('is_broadcaster', 50), ('is_mod', 10), ('is_subscriber', 15), ('is_vip', 5), ('is_follower', 5)]
         for permission, song_limit in perm_limits:
             if requester_info['userstatuses'][permission]:
                 return num_requests >= song_limit, "Too many songs on the queue for your permission level: {}.".format(permission[3:])
@@ -126,8 +126,7 @@ class Queue:
 
         return self._next_song()
 
-    def add_song_from_default_playlist(self):
-        track = self.spotify_player.random_track_from_default_playlist()
+    def add_song_from_track(self, track):
         song_request = song_request_factory(SongType.Spotify, 'stroopc',
                                             track['name'], track['artist'],
                                             track['song_uri'],
@@ -171,9 +170,12 @@ class Queue:
         return self._start_playing(sr=sr, requester_info=requester_info)
 
     @check_queue_length
-    def _stop_playing(self):
-        app.logger.debug('Stopping playing: {}'.format(self.queue[0]))
-        self.queue[0].pause()
+    def _stop_playing(self, song=None):
+        if not song:
+            song = self.queue[0]
+
+        app.logger.debug('Stopping playing: {}'.format(song))
+        song.pause()
 
         return 'Stopped the music :('
 
@@ -188,7 +190,6 @@ class Queue:
 
     @check_queue_length
     def _next_song(self):
-        self._stop_playing()
         return self._song_done()
 
     def _fill_queue(self):
@@ -199,35 +200,58 @@ class Queue:
             app.logger.debug("Filling queue... Added: {}".format(song))
 
     def _rm_song_from_db(self, song_to_del):
-        with app.app_context():
-            app.logger.debug('Removing {} from queue'.format(song_to_del))
-            # this is run from within a thread and won't have access to the app
-            # context unless this is given
-            song = SongRequest.query.filter_by(link=song_to_del.link).first()
+        try:
+            with app.app_context():
+                app.logger.debug('Removing {} from queue'.format(song_to_del))
+                # this is run from within a thread and won't have access to the app
+                # context unless this is given
+                song = SongRequest.query.filter_by(link=song_to_del.link).first()
 
-            # # songs that are added from the default playlist aren't actually
-            # # added to the db since they aren't added/_ad
-            # if song:
-            db.session.delete(song)
-            db.session.commit()
+                # # songs that are added from the default playlist aren't actually
+                # # added to the db since they aren't added/_ad
+                # if song:
+                print("db: '", db, "' song: '", song, "'")
+                db.session.delete(song)
+                db.session.commit()
+        except sqlalchemy.orm.exc.UnmappedInstanceError as e:
+            print("ERROR:", e)
 
     def _song_done(self):
         ''' Should only be called once per SongRequest '''
-        app.logger.debug('Song finishing: {}'.format(self.queue[0]))
-        self.queue[0].done()
+        last_song = self.queue.pop(0)
+        app.logger.debug('Song finishing: {}'.format(last_song.name))
+        last_song.done()
 
-        if len(self.queue) == 1:
-            self.add_song_from_default_playlist()
+        self._rm_song_from_db(last_song)
+        app.logger.debug('Removing song: {} from the queue'.format(last_song))
 
-        self._start_playing(self.queue[1])
         self.skippers = set()
-        response = self.queue[1].info()
 
-        self._rm_song_from_db(self.queue[0])
+        return self._play_next_song(last_song)
 
-        app.logger.debug('Removing song: {} from the queue'.format(self.queue[0]))
-        del self.queue[0]
-        return response
+    def _play_next_song(self, last_song):
+        if len(self.queue) == 0:
+            self._start_autoplay(last_song)
+            return f"No more songs from chat, we vibin' on similar songs to {last_song.name}"
+        print(f"last song was: {last_song}")
+
+        # spotify will autoplay, so we need to stop it
+        self._stop_playing(last_song)
+        self._start_playing()
+        return self.queue[0].info()
+
+    def _start_autoplay(self, last_song):
+        self._prep_autoplay(last_song)
+        self._start_playing()
+
+    def _prep_autoplay(self, last_song):
+        track = None
+        if last_song.song_type == SongType.YouTube:
+            track = self.spotify_player.random_track_from_playlist()
+        else:
+            track = self.spotify_player.request_playback_info()
+
+        self.add_song_from_track(track)
 
     def _validate_int(self, num):
         if not self.queue:
@@ -261,12 +285,21 @@ class Queue:
     def _is_broadcaster(self, requester_info):
         return requester_info and requester_info['userstatuses']['is_broadcaster']
 
-    def _check_and_start_playing(self):
-        if len(self.queue) != 1 or not self.queue:
-            app.logger.debug('checked to start playing and got no queue: {}'.format(self.queue))
-            return
-        self._stop_playing()
-        self._start_playing()
+    def _check_and_start_playing(self, song_request):
+        response = self._add_to_queue(song_request)
+
+        if not self.queue:
+            app.logger.error('Checked to start playing and got no queue: {}'.format(self.queue))
+            return 'No queue object. Tell Stroop!'
+
+        if self._queue_has_one_song():
+            self._stop_playing()
+            self._start_playing()
+
+        return response
+
+    def _queue_has_one_song(self):
+        return len(self.queue) == self.ONE_SONG
 
     def _add_to_queue(self, song_request):
         with app.app_context():

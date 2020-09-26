@@ -28,7 +28,7 @@ class SpotifyBase(Config):
         track = result['tracks']['items'][0]
         return self._song_info_from_track(track)
 
-    def _song_info_from_currently_playing(self, response):
+    def _song_info_from_spotify_response(self, response):
         if not response:
             return {}
 
