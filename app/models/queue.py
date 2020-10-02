@@ -15,6 +15,7 @@ class Queue:
     MAX_LEN = 20
     MAX_SONG_REQS_PER_PERSON = 3
     ONE_SONG = 1
+    THOOM_VOLUME = '70'
     VOL_REGEX = '[\+|-]\d{1,3}'
     ERR_TOO_LOUD = "Please don't make me go deaf while I play games :( Give a value between 0 and {} inclusive"
     ERR_INVALID_VOL = "Please enter a valid number between 0 and {}, inclusive"
@@ -140,6 +141,8 @@ class Queue:
 
     @mods
     def set_volume(self, volume_percent, requester_info=None):
+        volume_percent = self._fmt_thoom_msg(volume_percent)
+
         cur_song = self.spotify_player
         max_volume = 50
         if len(self.queue):
@@ -311,3 +314,5 @@ class Queue:
             return 'Added {} to position number #{}'.format(
                     song_request.info(), len(self.queue))
 
+    def _fmt_thoom_msg(self, volume_percent):
+        return self.THOOM_VOLUME if volume_percent == 'thoom' else volume_percent
