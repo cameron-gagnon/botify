@@ -89,24 +89,17 @@ class Queue:
     @mods
     def promote(self, pos, requester_info=None):
         success, pos = self._validate_int(pos)
-        if not success:
+        if not success or len(self.queue) == 1:
             return pos
 
-#        song_1 = self.queue[1]
-#        song_to_promote = self.queue[pos-1]
-#        song_1 = SongRequest.query.filter_by(link=song_1.link).first()
-#        song_to_promote = SongRequest.query.filter_by(link=song_to_promote.link).first()
-#        tmp_id = song_1.pos_in_queue
-#        print('song_1 id:', song_1.pos_in_queue)
-#        print('promote id:', song_to_promote.pos_in_queue)
-#        song_1.pos_in_queue = song_to_promote.pos_in_queue
-#        song_to_promote.pos_in_queue = tmp_id
-#
-#        print('song_1 id:', song_1.pos_in_queue)
-#        print('promote id:', song_to_promote.pos_in_queue)
-#        db.session.commit()
-#
+        song_to_swap = self.queue[1]
+        song_to_promote = self.queue[pos-1]
+        song_to_swap = db.session.query(SongRequest).filter_by(link=song_to_swap.link).first()
+        song_to_promote = db.session.query(SongRequest).filter_by(link=song_to_promote.link).first()
+
+        song_to_swap, song_to_promote = song_to_promote, song_to_swap
         self.queue[1], self.queue[pos-1] = self.queue[pos-1], self.queue[1]
+        db.session.commit()
         return 'Promoted {} to #2'.format(self.queue[1].info())
 
     def playlist(self, offset=0):
