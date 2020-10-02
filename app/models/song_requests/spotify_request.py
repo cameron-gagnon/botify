@@ -5,6 +5,16 @@ from flask_socketio import emit
 
 from app.models.song_requests.song_request import SongRequest
 
+class Decorators:
+    @classmethod
+    def has_playback_info(cls, decorated):
+        def wrapper(*args, **kwargs):
+            if args[0].playback_info:
+                return decorated(*args, **kwargs)
+            else:
+                return False
+        return wrapper
+
 class SpotifyRequest(SongRequest):
 
     def __init__(self, requester, player, song_type, *args, callback=None):
@@ -48,9 +58,18 @@ class SpotifyRequest(SongRequest):
     def get_volume(self):
         return self.player.get_volume()
 
-
+    @Decorators.has_playback_info
     def is_playing(self):
-        return self.playback_info and self.playback_info['is_playing']
+        return self.playback_info['is_playing']
+
+    @Decorators.has_playback_info
+    def playing_next_song(self):
+        return self.playback_info['name'] != self.name
+
+    @Decorators.has_playback_info
+    def spotify_sucks_pp(self):
+        return self.playback_info['name'] == self.name \
+                  and self.playback_info['progress_ms'] == 0
 
     def _song_done(self):
         while True:
@@ -61,19 +80,7 @@ class SpotifyRequest(SongRequest):
             self.playback_info = self.player.request_playback_info()
             print("request_player info:", self.playback_info)
 
-            # sometimes it seems when spotify finishes playing a song, if it
-            # isn't on autoplay and isn't told to play a new song it will
-            # immediately start returning no information for current playback
-            # we assume we're not erroring out and instead spotify is just done
-            # playing
-            # if not self.playback_info:
-            #     self.callback()
-            #     return
-
-            # and self.playback_info['progress_ms'] == 0 \
-            # and not self.playback_info['is_playing'] \
-            if self.playback_info \
-                and self.playback_info['name'] != self.name:
+            if self.playing_next_song() or self.spotify_sucks_pp():
                 print("Executing callback")
                 self.callback()
                 return
