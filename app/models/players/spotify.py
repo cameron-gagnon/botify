@@ -29,13 +29,19 @@ class SpotifyPlayer(SpotifyBase):
         random_int = random.randint(0, self.default_playlist_length)
         track_info = self.sp.user_playlist_tracks(self.config['user_id'],
                             playlid_uid, offset=random_int, limit=1)
+        app.logger.debug(f"Random track info from playlist: {track_info}")
         track = track_info['items'][0]['track']
         return self._song_info_from_track(track)
 
     @handle_refresh
+    def get_next_song(self, track):
+        self.sp.next_track(self.RANGER_DEVICE_ID)
+        return self.request_playback_info()
+
+    @handle_refresh
     def modify_playlist(self, playlist_id, song_uri):
         res = self.sp.playlist_replace_items(playlist_id, [song_uri])
-        print(f"result from adding (or clearing) {playlist_id}: {res}")
+        app.logger.debug(f"result from adding (or clearing) {playlist_id}: {res}")
 
     @handle_refresh
     def get_volume(self):
@@ -74,7 +80,7 @@ class SpotifyPlayer(SpotifyBase):
         if uri:
             uri = [uri]
 
-        print("Playing track", uri, position_ms)
+        app.logger.debug(f"Playing track: {uri} at {position_ms}")
         self.sp.start_playback(device_id=self.RANGER_DEVICE_ID,
                 position_ms= position_ms, uris=uri, context_uri=context_uri)
 

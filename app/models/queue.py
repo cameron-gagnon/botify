@@ -3,7 +3,7 @@ import requests
 
 from app.helpers.decorators.decorators import handle_infinite_loop, check_queue_length, mods
 from app.helpers.searcher import Searcher
-from app.helpers.song_request_factory import song_request_factory
+from app.models.song_requests.song_request_factory import song_request_factory
 from app.models.song_requests.song_request import SongRequest
 from app.models.song_requests.song_types import SongType
 from app import db
@@ -125,7 +125,7 @@ class Queue:
                                             track['name'], track['artist'],
                                             track['song_uri'],
                                             callback=self._next_song)
-        app.logger.debug('Adding track from default playlist: {}'.format(song_request))
+        app.logger.debug(f"Adding track: {song_request}")
         self._add_to_queue(song_request)
 
     @check_queue_length
@@ -170,7 +170,7 @@ class Queue:
         if not song:
             song = self.queue[0]
 
-        app.logger.debug('Stopping playing: {}'.format(song))
+        app.logger.debug(f"Stopping playing: {song}")
         song.pause()
 
         return 'Stopped the music :('
@@ -198,7 +198,7 @@ class Queue:
     def _rm_song_from_db(self, song_to_del):
         try:
             with app.app_context():
-                app.logger.debug('Removing {} from queue'.format(song_to_del))
+                app.logger.debug(f"Removing {song_to_del} from db")
                 # this is run from within a thread and won't have access to the app
                 # context unless this is given
                 song = SongRequest.query.filter_by(link=song_to_del.link).first()
@@ -206,7 +206,6 @@ class Queue:
                 # # songs that are added from the default playlist aren't actually
                 # # added to the db since they aren't added/_ad
                 # if song:
-                print("db: '", db, "' song: '", song, "'")
                 db.session.delete(song)
                 db.session.commit()
         except sqlalchemy.orm.exc.UnmappedInstanceError as e:
@@ -215,11 +214,8 @@ class Queue:
     def _song_done(self):
         ''' Should only be called once per SongRequest '''
         last_song = self.queue.pop(0)
-        app.logger.debug('Song finishing: {}'.format(last_song.name))
         last_song.done()
-
         self._rm_song_from_db(last_song)
-        app.logger.debug('Removing song: {} from the queue'.format(last_song))
 
         self.skippers = set()
 
@@ -227,25 +223,31 @@ class Queue:
 
     def _play_next_song(self, last_song):
         if len(self.queue) == 0:
+            app.logger.debug(f"Starting autoplay since {last_song} was the last song")
             self._start_autoplay(last_song)
-            return f"No more songs from chat, we vibin' on similar songs to {last_song.name}"
         print(f"last song was: {last_song}")
 
-        # spotify will autoplay, so we need to stop it
-        self._stop_playing(last_song)
         self._start_playing()
         return self.queue[0].info()
 
     def _start_autoplay(self, last_song):
         self._prep_autoplay(last_song)
-        self._start_playing()
 
     def _prep_autoplay(self, last_song):
+        app.logger.debug(f"Prepping autoplay after {last_song}")
         track = None
         if last_song.song_type == SongType.YouTube:
             track = self.spotify_player.random_track_from_playlist()
         else:
             track = self.spotify_player.request_playback_info()
+            app.logger.debug(f"Checking playback and found {track}")
+            if last_song.name == track['name']:
+                app.logger.debug(f"Got same song {track['name']}, asking for next song.")
+                track = self.spotify_player.get_next_song(track)
+
+            while last_song.name == track['name']:
+                track = self.spotify_player.request_playback_info()
+                app.logger.debug(f"Waiting for Spotify to update, next track info: {track['name']}")
 
         self.add_song_from_track(track)
 

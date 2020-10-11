@@ -39,8 +39,8 @@ class SpotifyBase(Config):
 
     def _song_info_from_track(self, track):
         if not track:
-            app.logger.error('Asked for track info, but got no track!')
-            raise Exception('No track info provided when formatting info from track')
+            app.logger.error('ASKED FOR TRACK INFO, BUT GOT NO TRACK!')
+            return {}
 
         response = {}
         response['song_uri'] = track['external_urls']['spotify']

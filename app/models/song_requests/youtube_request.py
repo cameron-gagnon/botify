@@ -2,11 +2,13 @@ import threading
 import time
 
 from app.models.song_requests.song_request import SongRequest
+from app.models.song_requests.song_types import SongType
 
 class YouTubeRequest(SongRequest):
-    def __init__(self, requester, player, song_type, *args):
-        super().__init__(requester, player, song_type, *args)
+    def __init__(self, requester, player, *args):
+        super().__init__(requester, player, *args)
         self.MAX_VOLUME = 35
+        self.song_type = SongType.YouTube
 
     def play(self):
         return self.player.play(self.link)

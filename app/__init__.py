@@ -8,6 +8,8 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
 import logging
+logging.getLogger("spotipy").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 from app.helpers.configs.database import Config
 
