@@ -31,6 +31,7 @@ class SpotifyRequest(SongRequest):
         self._prev_pos_ms = deque(maxlen=self.MAX_DEQUE_LENGTH)
 
     def play(self):
+        self.update_playback_info_if_already_playing()
         self.start_tracking_playback()
         self.start_playback()
 
@@ -77,6 +78,11 @@ class SpotifyRequest(SongRequest):
     def song_stuck_or_paused(self):
         return self.playback_info['name'] == self.name \
                   and self._has_not_progressed()
+
+    def update_playback_info_if_already_playing(self):
+        potential_playback_info = self.player.request_playback_info()
+        if potential_playback_info.get('name', '') == self.name:
+            self.update_playback_info()
 
     # @returns True if still playing current song
     # @returns False if playing next song or song is "paused"/stuck at 0ms
