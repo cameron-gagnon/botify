@@ -1,5 +1,6 @@
 import re
 import random
+from time import sleep
 
 from app.models.players.spotify_base import SpotifyBase
 from app.helpers.decorators.decorators import handle_refresh
@@ -10,6 +11,7 @@ from main import app
 class SpotifyPlayer(SpotifyBase):
 
     TMP_PLAYLIST = 'spotify:playlist:7IaqpuGOD8ypXoSRKnZ865'
+    MAX_RETRIES = 5
 
     def __init__(self):
         super().__init__()
@@ -59,7 +61,17 @@ class SpotifyPlayer(SpotifyBase):
 
     @handle_refresh
     def request_playback_info(self):
-        return self._song_info_from_spotify_response(self.sp.current_playback(market='US'))
+        current_playback_info = None
+        retries = 0
+        while retries < self.MAX_RETRIES:
+            current_playback_info = self.sp.current_playback(market='US')
+            if current_playback_info:
+                break
+            app.logger.debug(f'Got no playback info, {retries} times in a row')
+            retries += 1
+            sleep(0.2)
+
+        return self._song_info_from_spotify_response(current_playback_info)
 
     @handle_refresh
     def next_track(self):

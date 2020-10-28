@@ -29,6 +29,7 @@ class SpotifyBase(Config):
         return self._song_info_from_track(track)
 
     def _song_info_from_spotify_response(self, response):
+        app.logger.debug(f"Song info from spotify response is {response}")
         if not response:
             return {}
 
