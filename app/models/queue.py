@@ -66,8 +66,6 @@ class Queue:
             if song.requester == requester_info['username']:
                 num_requests += 1
 
-        app.logger.debug('Too many requests for: {}'.format(requester_info))
-
         perm_limits = [('is_broadcaster', 50), ('is_mod', 10), ('is_subscriber', 15), ('is_vip', 5), ('is_follower', 5)]
         for permission, song_limit in perm_limits:
             if requester_info['userstatuses'][permission]:

@@ -88,13 +88,9 @@ class SpotifyPlayer(SpotifyBase):
             self.sp.pause_playback(device_id=self.RANGER_DEVICE_ID)
 
     @handle_refresh
-    def play_track(self, uri=None, position_ms=0, context_uri=None):
-        if uri:
-            uri = [uri]
-
-        app.logger.debug(f"Playing track: {uri} at {position_ms}")
+    def play_track(self, position_ms=0, context_uri=None):
         self.sp.start_playback(device_id=self.RANGER_DEVICE_ID,
-                position_ms= position_ms, uris=uri, context_uri=context_uri)
+                position_ms=position_ms, uris=None, context_uri=context_uri)
 
     @handle_refresh
     def seek_track(self, postition_ms):

@@ -32,8 +32,8 @@ class SpotifyRequest(SongRequest):
 
     def play(self):
         self.update_playback_info_if_already_playing()
-        self.start_tracking_playback()
         self.start_playback()
+        self.start_tracking_playback()
 
     def start_tracking_playback(self):
         if not self.thread_started:
@@ -87,12 +87,17 @@ class SpotifyRequest(SongRequest):
     # @returns True if still playing current song
     # @returns False if playing next song or song is "paused"/stuck at 0ms
     def update_playback_info(self):
-        app.logger.debug(f"Updating playback info for: {self.name}")
+        app.logger.debug(f"Updating playback info for: {self.name}. "\
+                          "Current playback info is: {self.playback_info['name']} "\
+                          "at {self.playback_info['progress_ms']}")
 
         self.playback_info = self.player.request_playback_info()
         self._update_playback_history()
 
         app.logger.debug(f"Updated playback info: {self.playback_info['name']} playing at {self.playback_info['progress_ms']}")
+
+    def is_playing_this_song(self):
+        self.update_playback_info()
         return not (self.playing_next_song() or self.song_stuck_or_paused())
 
     @Decorators.has_playback_info
@@ -112,8 +117,7 @@ class SpotifyRequest(SongRequest):
             if self.song_done:
                 return
 
-            playing_this_song = self.update_playback_info()
-            if not playing_this_song:
+            if not self.is_playing_this_song():
                 app.logger.debug(f"Executing callback for spotify song: {self.name}")
                 self.callback()
                 return
