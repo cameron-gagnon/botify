@@ -29,13 +29,14 @@ class SpotifyBase(Config):
         return self._song_info_from_track(track)
 
     def _song_info_from_spotify_response(self, response):
-        app.logger.debug(f"Song info from spotify response is {response}")
         if not response:
+            app.logger.debug(f"Song info from spotify response is {response}")
             return {}
 
         res = self._song_info_from_track(response['item'])
         res['is_playing'] = response['is_playing']
         res['progress_ms'] = response['progress_ms']
+        app.logger.debug(f"Spotify response info: {res}")
         return res
 
     def _song_info_from_track(self, track):

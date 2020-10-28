@@ -37,7 +37,7 @@ class YouTubePlayer(YouTubeSockets):
         emit("get_volume", {}, broadcast=True, namespace='/youtube')
         time.sleep(.5)
         print("After volume: ", self.volume)
-        return "Volume is: {}".format(self.volume)
+        return f'Volume is: {self.get_int_volume()}'
 
     def get_int_volume(self):
         return self.volume
