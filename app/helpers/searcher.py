@@ -10,6 +10,7 @@ class Searcher:
         self.youtube_api = YouTubeAPI()
 
     def search(self, song, requester, callback):
+        song = song.replace('by', '').replace('-', '')
         song_type = None
         if self._is_youtube_link(song):
             success, response = self.youtube_api.is_valid_link(song)
