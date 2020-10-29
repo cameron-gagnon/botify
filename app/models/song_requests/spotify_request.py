@@ -1,7 +1,7 @@
 import gevent
-import time
 from collections import deque
 from flask_socketio import emit
+from time import sleep
 
 from app.models.song_requests.song_request import SongRequest
 from app.models.song_requests.song_types import SongType
@@ -20,7 +20,7 @@ class Decorators:
 class SpotifyRequest(SongRequest):
 
     SLEEP_TIME = 0.50
-    MAX_DEQUE_LENGTH = 10
+    MAX_ZERO_SECOND_CHECKS = 10
 
     def __init__(self, requester, player, *args, callback=None):
         super().__init__(requester, player, *args)
@@ -28,7 +28,7 @@ class SpotifyRequest(SongRequest):
         self.thread_started = False
         self.callback = callback
         self.song_type = SongType.Spotify
-        self._prev_pos_ms = deque(maxlen=self.MAX_DEQUE_LENGTH)
+        self._prev_pos_ms = deque(maxlen=self.MAX_ZERO_SECOND_CHECKS)
 
     def play(self):
         self.update_playback_info_if_already_playing()
@@ -45,6 +45,9 @@ class SpotifyRequest(SongRequest):
         if not self.is_playing():
             self.player.modify_playlist(self.player.TMP_PLAYLIST, self.link)
             self.play_stream_playlist(at_ms)
+
+        while not self.is_playing_this_song():
+            sleep(self.SLEEP_TIME)
 
     def resume_playback_at(self):
         ms = 0
@@ -72,12 +75,12 @@ class SpotifyRequest(SongRequest):
 
     @Decorators.has_playback_info
     def playing_next_song(self):
-        return self.playback_info['name'] != self.name
+        return self.playback_info.get('name') != self.name
 
     @Decorators.has_playback_info
     def song_stuck_or_paused(self):
         return self.playback_info['name'] == self.name \
-                  and self._has_not_progressed()
+                  and not self._has_progressed()
 
     def update_playback_info_if_already_playing(self):
         potential_playback_info = self.player.request_playback_info()
@@ -87,29 +90,33 @@ class SpotifyRequest(SongRequest):
     # @returns True if still playing current song
     # @returns False if playing next song or song is "paused"/stuck at 0ms
     def update_playback_info(self):
-        app.logger.debug(f"Updating playback info for: {self.name}. "\
-                          "Current playback info is: {self.playback_info['name']} "\
-                          "at {self.playback_info['progress_ms']}")
+        app.logger.debug(f"Updating playback info for: {self.name}.\n"\
+                         f"Current playback info is: '{self.playback_info}'\n")
 
         self.playback_info = self.player.request_playback_info()
         self._update_playback_history()
 
-        app.logger.debug(f"Updated playback info: {self.playback_info['name']} playing at {self.playback_info['progress_ms']}")
+        app.logger.debug(f"Updated playback info for: {self.name}.\n"\
+                         f"Current playback info is: {self.playback_info.get('name')}\n"\
+                         f"at {self.playback_info.get('progress_ms', -1)}")
 
     def is_playing_this_song(self):
+        app.logger.debug(f"Checking if we're still playing: {self.name}")
         self.update_playback_info()
         return not (self.playing_next_song() or self.song_stuck_or_paused())
 
     @Decorators.has_playback_info
     def _update_playback_history(self):
-        self._prev_pos_ms.append(self.playback_info['progress_ms'])
+        self._prev_pos_ms.append(self.playback_info.get('progress_ms', 0))
+        self._prev_song_playing.append(self.playback_info.get('name'))
 
-    def _has_not_progressed(self):
+    def _has_progressed(self):
         num_times_at_0 = 0
         for pos_ms in self._prev_pos_ms:
             if pos_ms == 0:
                 num_times_at_0 += 1
-        return num_times_at_0 == self.MAX_DEQUE_LENGTH
+        has_progressed = num_times_at_0 != self.MAX_ZERO_SECOND_CHECKS
+        return has_progressed
 
     def _song_done(self):
         while True:
