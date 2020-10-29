@@ -33,7 +33,7 @@ class Queue:
         app.logger.debug('Initialized queue: {}'.format(self.queue))
 
     def request_song(self, song, requester_info):
-        app.logger.debug('in request_song and the queue looks like this: {} '.format(self.queue))
+        app.logger.debug(f'in request_song and the queue looks like this: {self.queue}')
         if len(self.queue) >= self.MAX_LEN:
             return self.ERR_FULL_QUEUE
 
@@ -229,9 +229,6 @@ class Queue:
         return self.queue[0].info()
 
     def _start_autoplay(self, last_song):
-        self._prep_autoplay(last_song)
-
-    def _prep_autoplay(self, last_song):
         app.logger.debug(f"Prepping autoplay after {last_song}")
         track = None
         if last_song.song_type == SongType.YouTube:

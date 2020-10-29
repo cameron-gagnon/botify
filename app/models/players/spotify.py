@@ -43,7 +43,7 @@ class SpotifyPlayer(SpotifyBase):
     @handle_refresh
     def modify_playlist(self, playlist_id, song_uri):
         res = self.sp.playlist_replace_items(playlist_id, [song_uri])
-        app.logger.debug(f"result from adding (or clearing) {playlist_id}: {res}")
+        app.logger.debug(f"Setting the playlist to {song_uri}")
 
     @handle_refresh
     def get_volume(self):
