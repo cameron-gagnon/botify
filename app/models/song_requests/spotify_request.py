@@ -108,7 +108,6 @@ class SpotifyRequest(SongRequest):
     @Decorators.has_playback_info
     def _update_playback_history(self):
         self._prev_pos_ms.append(self.playback_info.get('progress_ms', 0))
-        self._prev_song_playing.append(self.playback_info.get('name'))
 
     def _has_progressed(self):
         num_times_at_0 = 0
