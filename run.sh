@@ -15,7 +15,7 @@ set -e echo "Starting botify"
 echo `pkill -f botify`
 
 truncate_file debug.log
-truncate_file error.log
+truncate_file errors.log
 
 source venv/bin/activate
 nohup python ./main.py 2>&1 &
