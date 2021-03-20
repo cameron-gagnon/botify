@@ -19,7 +19,7 @@ httplib2==0.12.3
 idna==2.8
 isodate==0.6.0
 itsdangerous==1.1.0
-Jinja2==2.10.1
+Jinja2==2.11.3
 Mako==1.0.12
 MarkupSafe==1.1.1
 mock==3.0.5
