@@ -10,7 +10,8 @@ truncate_file() {
     mv ${1}.bak $1
 }
 
-set -e echo "Starting botify"
+set -e
+echo "Starting botify"
 
 echo `pkill -f botify`
 
@@ -20,7 +21,3 @@ truncate_file errors.log
 source venv/bin/activate
 nohup python ./main.py 2>&1 &
 deactivate
-
-echo "Started botify"
-
-ps aux | grep -v grep | grep botify
