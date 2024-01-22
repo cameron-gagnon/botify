@@ -56,7 +56,7 @@ class SpotifyRequest(SongRequest):
         return ms
 
     def play_stream_playlist(self, position_ms):
-        app.logger.debug(f"Playing song: {self.link} starting at {position_ms}ms in.")
+        app.logger.debug(f"Playing song: {self.link} starting at {position_ms}ms")
         self.player.play_track(context_uri=self.player.TMP_PLAYLIST,
                                position_ms=position_ms)
 
@@ -90,15 +90,9 @@ class SpotifyRequest(SongRequest):
     # @returns True if still playing current song
     # @returns False if playing next song or song is "paused"/stuck at 0ms
     def update_playback_info(self):
-        app.logger.debug(f"Updating playback info for: {self.name}.\n"\
-                         f"Current playback info is: '{self.playback_info}'\n")
-
         self.playback_info = self.player.request_playback_info()
         self._update_playback_history()
-
-        app.logger.debug(f"Updated playback info for: {self.name}.\n"\
-                         f"Current playback info is: {self.playback_info.get('name')}\n"\
-                         f"at {self.playback_info.get('progress_ms', -1)}")
+        app.logger.debug(f"Current playback info. name={self.playback_info.get('name')} time={self.playback_info.get('progress_ms', -1)}")
 
     def is_playing_this_song(self):
         app.logger.debug(f"Checking if we're still playing: {self.name}")

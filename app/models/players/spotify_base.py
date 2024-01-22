@@ -34,6 +34,10 @@ class SpotifyBase(Config):
             return {}
 
         res = self._song_info_from_track(response['item'])
+
+        if not response['item']:
+            app.logger.error(f'No item info for track, but got: {response}')
+
         res['is_playing'] = response['is_playing']
         res['progress_ms'] = response['progress_ms']
         app.logger.debug(f"Spotify response info: {res}")
