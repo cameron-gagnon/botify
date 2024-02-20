@@ -30,7 +30,8 @@ class YouTubeAPI(Config):
 
         # Get credentials and create an API client
         self.youtube = googleapiclient.discovery.build(
-            api_service_name, api_version, developerKey=self.config['api_key'])
+            api_service_name, api_version, developerKey=self.config['api_key'],
+            cache_discovery=False)
 
     def is_valid_link(self, link):
         my_response = {}
