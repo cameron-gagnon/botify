@@ -96,6 +96,67 @@ class SpotifyPlayer(SpotifyBase):
     def seek_track(self, postition_ms):
         self.sp.seek_track(postition_ms,device_id=self.RANGER_DEVICE_ID)
 
+    @handle_refresh
+    def _all_user_playlists(self, limit=50):
+        """
+        _all_user_playlists returns the complete list of playlists belonging to
+        the currently authorized Spotify user.
+
+        :param limit: (optional, default 50) number of results to return (must be between 0-50)
+
+        :return: list of all user playlists
+        """
+
+        # offset used to paginate through results
+        offset = 0
+        results = []
+
+        tmp_results = self.sp.current_user_playlists(limit=limit)['items']
+        while tmp_results != []:
+            offset += limit
+            results += tmp_results
+            tmp_results = self.sp.current_user_playlists(limit=limit, offset=offset)['items']
+
+        return results
+
+    @handle_refresh
+    def add_song_to_user_playlist(self, username: str, song_link: str):
+        """
+        add_song_to_user_playlist adds a song to a playlist containing the
+        complete list of songs a user has requested (re-requested songs are
+        added). If this is the first song a user has requested, then the
+        playlist is created first before the song is added to it. The
+        playlist is created in the Spotify authorized user's library.
+
+        :param username: username of twitch user requesting a song
+        :param song_link: spotify https URL of the song requested
+        """
+        requester_playlist_name = self._requester_playlist_name(username)
+
+        # find the requester's playlist, if it already exists
+        playlists = self._all_user_playlists()
+        playlist = None
+        for pl in playlists:
+            if pl['name'] == requester_playlist_name:
+                playlist = pl
+                break
+
+        # playlist for this user doesn't already exist, so we'll create it
+        if not playlist:
+            playlist = self.sp.user_playlist_create(self.sp.current_user()['id'],
+                requester_playlist_name,
+                description=f"Songs {username} has requested in StroopC's chat! Request more songs at https://twitch.tv/stroopc")
+
+        self.sp.playlist_add_items(playlist['id'], [song_link])
+
+    def _requester_playlist_name(self, username: str) -> str:
+        """
+        :return: name of the Spotify playlist containing the complete list of
+        songs the user has requested
+        """
+
+        return f"[Twitch] {username}'s song requests"
+
     def _parse_volume(self, response):
         if response['device']['name'] != 'RANGER':
             return "Unable to get volume :("

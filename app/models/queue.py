@@ -298,6 +298,8 @@ class Queue:
         with app.app_context():
             app.logger.debug('_adding_to_queue: {}'.format(song_request))
             self.queue.append(song_request)
+            if song_request.song_type == SongType.Spotify:
+                self.spotify_player.add_song_to_user_playlist(song_request.requester, song_request.link)
 
             db.session.add(song_request)
             db.session.commit()
