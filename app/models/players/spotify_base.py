@@ -5,7 +5,7 @@ from app.helpers.configs.config import Config
 from main import app
 
 class SpotifyBase(Config):
-    RANGER_DEVICE_ID = '8a3c4ae699cdd7775c263a6993a5ddf78e20cc10'
+    RANGER_DEVICE_ID = '09dffbc733d2e9311a302eb660239c6aa754b558'
     DEFAULT_PLAYLIST_TRACK = 'spotify:playlist:7ekRyn6gOaqR6P0GS24uZ5'
 
     def __init__(self):
